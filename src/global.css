@@ -1,0 +1,45 @@
+@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&family=Ribeye&family=PT+Sans:ital,wght@0,400;0,700;1,400;1,700&family=Roboto+Condensed:ital,wght@0,100..900;1,100..900&display=swap");
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-off-white: #f1f1f1;
+  --color-system-white: #fdfdfd;
+  --color-off-black: #1c1d1e;
+  --color-system-black: #272629;
+  --color-primary: #458dfc;
+  --color-secondary: #381f69;
+  --color-primaryLight: #6cbcfc;
+  --font-manrope: "Manrope", sans-serif;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.bg-gradient-radial {
+  background-image: radial-gradient(
+    1686.42% 113.39% at 83.25% 2.56%,
+    rgba(69, 142, 252, 0.192),
+    rgba(69, 141, 252, 0)
+  );
+}
+
+.bg-custom-radial {
+  background-image: radial-gradient(
+    circle,
+    rgba(69, 142, 252, 0.226),
+    rgba(69, 142, 252, 0.11),
+    transparent 60%,
+    transparent 100%
+  );
+}
