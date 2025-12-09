@@ -246,8 +246,8 @@ function AddService({
           withCredentials: true,
         });
         const services: Options[] = res.data.data.map(
-          (svc: { _id: string; name: string }) => ({
-            value: svc._id,
+          (svc: { name: string }) => ({
+            value: svc.name,
             label: svc.name,
           })
         );
