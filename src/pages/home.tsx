@@ -237,10 +237,34 @@ function AddService({
   setFormState: React.Dispatch<React.SetStateAction<DoctorFormData>>;
   setOpenAddModal: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
-  const medicalServiceOptions = medicalServicesStrings.map((s) => ({
-    value: s,
-    label: s,
-  }));
+  const [serviceOptions, setServiceOptions] = useState<Options[]>([]);
+
+  useEffect(() => {
+    const fetchServices = async () => {
+      try {
+        const res = await axios.get(`${BACKEND_DOMAIN}/api/v1/services`, {
+          withCredentials: true,
+        });
+        const services: Options[] = res.data.data.map(
+          (svc: { name: string }) => ({
+            value: svc.name,
+            label: svc.name,
+          })
+        );
+        setServiceOptions(services);
+      } catch (err) {
+        console.error("Failed to fetch services", err);
+      }
+    };
+
+    fetchServices();
+  }, []);
+
+  const safeValue =
+    formState.medicalDepartment?.map((dep) => ({
+      value: dep,
+      label: dep,
+    })) || [];
 
   return (
     <form
@@ -265,10 +289,8 @@ function AddService({
           </label>
           <Select<{ value: string; label: string }, true>
             isMulti
-            options={medicalServiceOptions}
-            value={medicalServiceOptions.filter((o) =>
-              formState.medicalDepartment.includes(o.value)
-            )}
+            options={serviceOptions}
+            value={safeValue}
             onChange={(selected) => {
               if (selected.length <= 3) {
                 setFormState((prev) => ({

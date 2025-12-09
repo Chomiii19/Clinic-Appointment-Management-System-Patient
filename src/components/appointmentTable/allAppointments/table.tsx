@@ -81,9 +81,9 @@ function Table({
   return (
     <div className="rounded-xl border border-zinc-300 dark:border-zinc-700 mt-3 bg-system-white dark:bg-system-black flex flex-col max-h-[80vh] overflow-hidden">
       <div className="overflow-x-auto w-full no-scrollbar">
-        <div>
-          <div className="overflow-y-auto">
-            <table className="table-auto border-collapse">
+        <div className="w-full">
+          <div className="overflow-y-auto w-full">
+            <table className="table-auto border-collapse w-full">
               <thead className="text-sm text-zinc-500 sticky top-0 bg-system-white dark:bg-system-black z-10">
                 <tr>
                   <th className="w-36 px-5 py-2 z-20 border-b border-zinc-300 dark:border-zinc-700">

@@ -5,6 +5,19 @@ import { BACKEND_DOMAIN } from "../../configs/config";
 
 import { Eye, EyeClosed } from "lucide-react";
 
+interface AdminFormData {
+  firstname: string;
+  surname: string;
+  maritalStatus: string;
+  gender: string;
+  birthDate: string;
+  address: string;
+  email: string;
+  phoneNumber: string;
+  password: string;
+  role: string;
+}
+
 function CustomInput({
   type,
   name,
@@ -16,7 +29,7 @@ function CustomInput({
   name: string;
   placeholder?: string;
   state: string;
-  stateSetter: React.Dispatch<React.SetStateAction<string>>;
+  stateSetter: (value: string) => void;
 }) {
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -84,32 +97,42 @@ function CustomInput({
         )}
       </div>
       <p className="text-red-500 text-xs">{error}</p>
+      {type === "password" && !error && (
+        <p className="text-z-800 text-xs">
+          Password must be at least 8 characters long, and include a mix of
+          uppercase letters, numbers, and symbols.
+        </p>
+      )}
     </>
   );
 }
 
 export default function Signup() {
   const navigate = useNavigate();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [formState, setFormState] = useState<AdminFormData>({
+    firstname: "",
+    surname: "",
+    maritalStatus: "",
+    gender: "",
+    birthDate: "",
+    address: "",
+    email: "",
+    phoneNumber: "",
+    password: "",
+    role: "user",
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
-    const userData = {
-      email,
-      password,
-      role: "user",
-    };
-
     try {
       const response = await axios.post(
-        `${BACKEND_DOMAIN}/api/v1/auth/login`,
-        userData,
+        `${BACKEND_DOMAIN}/api/v1/auth/signup`,
+        formState,
         {
           headers: {
             "Content-Type": "application/json",
@@ -118,7 +141,7 @@ export default function Signup() {
         }
       );
 
-      console.log("Login success:", response.data);
+      console.log("Signup success:", response.data);
 
       navigate("/appointments");
     } catch (e) {
@@ -143,9 +166,9 @@ export default function Signup() {
           <div className="w-full">
             <header className="flex flex-col mb-5">
               <img src="/assets/icons/logo.png" className="w-20 mb-2" />
-              <h1 className="font-bold text-3xl">Welcome Back!</h1>
+              <h1 className="font-bold text-3xl">Welcome!</h1>
               <h3 className="text-sm mt-2 text-zinc-600">
-                Hello! Please enter your details to login.
+                Hello! Please enter your details to create an account.
               </h3>
             </header>
 
@@ -153,20 +176,178 @@ export default function Signup() {
               onSubmit={handleSubmit}
               className="flex flex-col justify-center items-center w-full gap-2"
             >
+              <div className="flex items-center gap-3 w-full">
+                <div className="flex flex-col w-full">
+                  <label htmlFor="firstname">
+                    Firstname <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="firstname"
+                    id="firstname"
+                    value={formState.firstname}
+                    onChange={(e) =>
+                      setFormState((prev) => ({
+                        ...prev,
+                        firstname: e.target.value,
+                      }))
+                    }
+                    placeholder="e.g. John"
+                    className="bg-white border rounded-md outline-none px-2 py-0.5 focus:border-primary transition-colors duration-150 w-full  ease-in-out border-zinc-400"
+                  />
+                </div>
+                <div className="flex flex-col w-full">
+                  <label htmlFor="surname">
+                    Surname <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="surname"
+                    id="surname"
+                    value={formState.surname}
+                    onChange={(e) =>
+                      setFormState((prev) => ({
+                        ...prev,
+                        surname: e.target.value,
+                      }))
+                    }
+                    placeholder="e.g. Doe"
+                    className="bg-white border rounded-md outline-none px-2 py-0.5 focus:border-primary transition-colors duration-150 w-full  ease-in-out border-zinc-400"
+                  />
+                </div>
+              </div>
+
               <div className="flex flex-col w-full">
-                <label htmlFor="email">Email</label>
+                <label htmlFor="email">
+                  Email <span className="text-red-500">*</span>
+                </label>
                 <CustomInput
                   type="email"
                   name="email"
                   placeholder="example@gmail.com"
-                  state={email}
-                  stateSetter={setEmail}
+                  state={formState.email}
+                  stateSetter={(value) =>
+                    setFormState((prev) => ({ ...prev, email: value }))
+                  }
                 />
               </div>
 
               <div className="flex flex-col w-full">
+                <label htmlFor="phoneNumber">
+                  Phone Number <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="phoneNumber"
+                  id="phoneNumber"
+                  value={formState.phoneNumber}
+                  onChange={(e) =>
+                    setFormState((prev) => ({
+                      ...prev,
+                      phoneNumber: e.target.value,
+                    }))
+                  }
+                  placeholder="e.g. Doe"
+                  className="bg-white border rounded-md outline-none px-2 py-0.5 focus:border-primary transition-colors duration-150 w-full  ease-in-out border-zinc-400"
+                />
+              </div>
+
+              <div className="flex flex-col w-full">
+                <label htmlFor="birthDate">
+                  Birth Date <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="date"
+                  name="birthDate"
+                  id="birthDate"
+                  value={formState.birthDate}
+                  onChange={(e) =>
+                    setFormState((prev) => ({
+                      ...prev,
+                      birthDate: e.target.value,
+                    }))
+                  }
+                  className="bg-white border rounded-md outline-none px-2 py-0.5 focus:border-primary transition-colors duration-150 w-full  ease-in-out border-zinc-400"
+                />
+              </div>
+
+              <div className="flex flex-col w-full">
+                <label htmlFor="address">
+                  Address <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="address"
+                  id="address"
+                  value={formState.address}
+                  onChange={(e) =>
+                    setFormState((prev) => ({
+                      ...prev,
+                      address: e.target.value,
+                    }))
+                  }
+                  placeholder="e.g. Blk Lot, Street, City, Province"
+                  className="bg-white border rounded-md outline-none px-2 py-0.5 focus:border-primary transition-colors duration-150 w-full  ease-in-out border-zinc-400"
+                />
+              </div>
+
+              <div className="flex items-center gap-3 w-full">
+                <div className="flex flex-col w-full">
+                  <label htmlFor="gender">
+                    Gender <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    required
+                    name="gender"
+                    id="gender"
+                    value={formState.gender}
+                    onChange={(e) =>
+                      setFormState((prev) => ({
+                        ...prev,
+                        gender: e.target.value,
+                      }))
+                    }
+                    className="border border-zinc-400 dark:border-zinc-700 outline-none rounded-md px-2 py-0.5 w-full"
+                  >
+                    <option value="" disabled>
+                      Select Gender
+                    </option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                  </select>
+                </div>
+                <div className="flex flex-col w-full">
+                  <label htmlFor="maritalStatus">
+                    Marital Status <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    required
+                    name="maritalStatus"
+                    id="maritalStatus"
+                    value={formState.maritalStatus}
+                    onChange={(e) =>
+                      setFormState((prev) => ({
+                        ...prev,
+                        maritalStatus: e.target.value,
+                      }))
+                    }
+                    className="border border-zinc-400 dark:border-zinc-700 outline-none rounded-md px-2 py-0.5 w-full"
+                  >
+                    <option value="" disabled>
+                      Select Marital
+                    </option>
+                    <option value="single">Single</option>
+                    <option value="widowed">Widowed</option>
+                    <option value="married">Married</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex flex-col w-full">
                 <div className="w-full flex flex-row justify-between items-center">
-                  <label htmlFor="password">Password</label>
+                  <label htmlFor="password">
+                    Password <span className="text-red-500">*</span>
+                  </label>
                   <Link
                     className="text-zinc-900 text-sm"
                     to={"/forgot-password"}
@@ -178,8 +359,10 @@ export default function Signup() {
                   type="password"
                   name="password"
                   placeholder=""
-                  state={password}
-                  stateSetter={setPassword}
+                  state={formState.password}
+                  stateSetter={(value) =>
+                    setFormState((prev) => ({ ...prev, password: value }))
+                  }
                 />
               </div>
 
@@ -208,7 +391,7 @@ export default function Signup() {
                 {loading ? (
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 ) : (
-                  "Log In"
+                  "Sign Up"
                 )}
               </button>
 
