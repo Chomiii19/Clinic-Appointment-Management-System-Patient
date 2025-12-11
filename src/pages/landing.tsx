@@ -260,39 +260,101 @@ function Features2({ id }: { id: number }) {
     threshold: 0.2,
     triggerOnce: true,
   });
+  const { ref: ref5, inView: isVisible5 } = useInView({
+    threshold: 0.2,
+    triggerOnce: true,
+  });
+  const { ref: ref6, inView: isVisible6 } = useInView({
+    threshold: 0.2,
+    triggerOnce: true,
+  });
+  const { ref: ref7, inView: isVisible7 } = useInView({
+    threshold: 0.2,
+    triggerOnce: true,
+  });
 
-  const layout1 = id === 1 ? "lg:col-span-1" : "lg:col-span-2";
   const layout2 = id === 1 ? "lg:col-span-2" : "lg:col-span-1";
 
-  const grid1ELementsStyle = `border bg-system-white/80 border-zinc-300 ${layout1} row-span-1 w-full h-full rounded-2xl transition-transform duration-300 ease-in shadow-md`;
-  const grid2ELementsStyle = `border bg-system-white/80 border-zinc-300 ${layout2} row-span-1 w-full h-full rounded-2xl transition-transform duration-300 ease-in shadow-md`;
+  const grid2ELementsStyle = `${layout2} row-span-1 w-full h-full rounded-2xl transition-transform duration-300 ease-in flex justify-center items-center `;
 
   return (
-    <div className="grid grid-cols-1 grid-rows-4 lg:grid-cols-3 lg:grid-rows-2 gap-7 w-full lg:w-[1200px] h-[750px] items-center justify-center">
+    <div
+      className="
+  grid
+  grid-cols-1
+  grid-rows-7
+  auto-rows-auto
+
+  lg:grid-cols-3
+  lg:grid-rows-3
+  lg:auto-rows-auto
+
+  gap-7
+  w-full
+  lg:w-[1000px]
+  h-auto
+  items-start
+  justify-center
+"
+    >
       <div
         ref={ref1}
-        className={`overflow-hidden ${grid1ELementsStyle} ${
+        className={`${grid2ELementsStyle} ${
           isVisible1 ? "translate-x-0" : "-translate-x-7"
         }`}
-      ></div>
+      >
+        <img src="/assets/images/service1.png" alt="" />
+      </div>
       <div
         ref={ref2}
-        className={`overflow-hidden relative${grid2ELementsStyle} ${
+        className={`overflow-hidden${grid2ELementsStyle} ${
           isVisible2 ? "translate-x-0" : "translate-x-7"
         }`}
-      ></div>
+      >
+        <img src="/assets/images/service2.png" alt="" />
+      </div>
       <div
         ref={ref3}
         className={`overflow-hidden ${grid2ELementsStyle} ${
           isVisible3 ? "translate-x-0" : "-translate-x-7"
         }`}
-      ></div>
+      >
+        <img src="/assets/images/service3.png" alt="" />
+      </div>
       <div
         ref={ref4}
-        className={`overflow-hidden ${grid1ELementsStyle} ${
+        className={`overflow-hidden ${grid2ELementsStyle} ${
           isVisible4 ? "translate-x-0" : "translate-x-7"
         }`}
-      ></div>
+      >
+        <img src="/assets/images/service4.png" alt="" />
+      </div>
+      <div
+        ref={ref5}
+        className={`overflow-hidden ${grid2ELementsStyle} ${
+          isVisible5 ? "translate-x-0" : "-translate-x-7"
+        }`}
+      >
+        <img src="/assets/images/service5.png" alt="" />
+      </div>
+      <div
+        ref={ref6}
+        className={`overflow-hidden ${grid2ELementsStyle} ${
+          isVisible6 ? "translate-x-0" : "translate-x-7"
+        }`}
+      >
+        <img src="/assets/images/service6.png" alt="" />
+      </div>
+      <div className="hidden lg:flex"></div>
+      <div
+        ref={ref7}
+        className={`overflow-hidden ${grid2ELementsStyle} ${
+          isVisible7 ? "translate-x-0" : "translate-x-7"
+        }`}
+      >
+        <img src="/assets/images/service7.png" alt="" />
+      </div>
+      <div className="hidden lg:flex"></div>
     </div>
   );
 }
