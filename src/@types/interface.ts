@@ -6,6 +6,11 @@ export interface IAppointment {
   doctorId: IDoctor;
   patientName: string;
   medicalDepartment: string[];
+  medicalRecord: {
+    _id: string;
+    filename: string;
+    fileUrl: string;
+  };
   schedule: Date;
   email: string;
   phoneNumber: string;

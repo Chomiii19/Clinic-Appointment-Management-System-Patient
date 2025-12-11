@@ -1,4 +1,4 @@
-import { ChevronsUpDown, Wand } from "lucide-react";
+import { ArrowUpRight, ChevronsUpDown, Wand } from "lucide-react";
 import { useState, type JSX } from "react";
 import { CustomCheckbox } from "../../Checkbox";
 import { tableHeaders } from "./headers/appointments";
@@ -8,6 +8,7 @@ import { serviceColors, statusColors } from "../data";
 import { BACKEND_DOMAIN } from "../../../configs/config";
 import axios from "axios";
 import type { IAppointment } from "../../../@types/interface";
+import { truncateFilename } from "../../../utils/truncate";
 
 export type Options = {
   value: string;
@@ -215,6 +216,25 @@ function Table({
                               </span>
                             )}
                           </div>
+                        </td>
+                        <td className="py-2 px-5 whitespace-nowrap">
+                          {appt?.medicalRecord?.fileUrl ? (
+                            <div className="flex items-center gap-1">
+                              <a
+                                href={appt?.medicalRecord?.fileUrl ?? "/"}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center px-2 border border-green-500 text-green-500 bg-green-200/20 rounded-md w-fit"
+                              >
+                                {truncateFilename(
+                                  appt?.medicalRecord?.filename ?? ""
+                                )}
+                                <ArrowUpRight className="w-4" />
+                              </a>
+                            </div>
+                          ) : (
+                            "none"
+                          )}
                         </td>
                         <td className="px-5">
                           <div className="flex items-center gap-2 text-sm">
