@@ -32,7 +32,7 @@ function Header({ headline }: { headline: string }) {
         {},
         {
           withCredentials: true,
-        },
+        }
       );
       navigate("/");
     } catch (err) {

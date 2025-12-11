@@ -1,5 +1,5 @@
-import { Facebook, Twitter, Instagram, CircleUserRound } from "lucide-react";
-import { useState } from "react";
+import { Facebook, Twitter, Instagram } from "lucide-react";
+import { Link } from "react-router-dom";
 
 export default function Header() {
   return (
@@ -36,7 +36,7 @@ function Logo() {
 function NavList({ text }: { text: string }) {
   return (
     <a
-      href="#"
+      href={`#${text.toLowerCase()}`}
       className="text-zinc-700 text-base font-semibold hover:text-primary transition-colors duration-150 hidden lg:flex"
     >
       {text}
@@ -58,36 +58,12 @@ function SocialMedia() {
 }
 
 function Profile() {
-  const [active, setActive] = useState("none");
-
-  const toggleActive = () => setActive(active === "none" ? "flex" : "none");
-
   return (
-    <div className="cursor-pointer relative" onClick={toggleActive}>
-      <CircleUserRound className="duration-300 text-zinc-700 hover:text-primary" />
-      <ProfileHover status={active} />
-    </div>
-  );
-}
-
-function ProfileHover({ status }: { status: string }) {
-  return (
-    <div
-      className="absolute top-9 right-1 flex-col gap-1 bg-system-white border border-zinc-300 shadow-md p-2 rounded-md w-[70px]"
-      style={{ display: status }}
+    <Link
+      to="/login"
+      className="bg-primary px-3 py-0.5 text-sm rounded-md text-white font-bold"
     >
-      <a
-        href="/login"
-        className="text-zinc-700 text-sm cursor-pointer w-full hover:text-pinkish"
-      >
-        Login
-      </a>
-      <a
-        href="/signup"
-        className="text-zinc-700 text-sm cursor-pointer w-full hover:text-pinkish transition-colors duration-300"
-      >
-        Sign up
-      </a>
-    </div>
+      Login
+    </Link>
   );
 }

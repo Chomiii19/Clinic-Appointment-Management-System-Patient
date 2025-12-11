@@ -1,4 +1,3 @@
-import { BookA } from "lucide-react";
 import { useInView } from "react-intersection-observer";
 import { Typewriter } from "react-simple-typewriter";
 import { users, type Iuser } from "./communityUsers";
@@ -12,11 +11,18 @@ export default function Home() {
         <Main />
         <Section
           id={1}
+          section="about"
           title="Effortless Clinic Appointment Features"
           desc="OMDL makes creating appointment simple"
-          radiusTop="border-t border-t-zinc-300 lg:rounded-t-[100px] shadow-pinkish"
+          radiusTop="border-t border-t-zinc-300 lg:rounded-t-[100px] shadow-primary"
         />
-        <Section id={2} title="Our Available Services" desc="" radiusTop="" />
+        <Section
+          id={2}
+          section="services"
+          title="Our Available Services"
+          desc=""
+          radiusTop=""
+        />
         <Community />
         <a
           href="#"
@@ -63,17 +69,10 @@ function Main() {
         </p>
         <div className="mt-10 flex gap-10">
           <a
-            href="/app"
+            href="/login"
             className="text-zinc-100 font-manrope px-4 py-1.5 font-semibold rounded-xl bg-linear-to-br from-blue-500 via-blue-400 to-primary hover:-translate-y-1 ease-in-out duration-300 transition-transform"
           >
             Get Started
-          </a>
-          <a
-            href="#"
-            className="font-manrope text-zinc-400 border px-4 py-1.5 rounded-xl border-zinc-400 flex gap-2 items-center hover:-translate-y-1 ease-in-out duration-300 transition-transform"
-          >
-            <BookA className="w-5" />
-            <p>Learn More</p>
           </a>
         </div>
       </div>
@@ -94,11 +93,13 @@ function Section({
   title,
   desc,
   id,
+  section,
   radiusTop,
 }: {
   title: string;
   desc: string;
   id: number;
+  section: string;
   radiusTop: string;
 }) {
   const [ref, inView] = useInView({
@@ -113,7 +114,7 @@ function Section({
         inView ? "mt-0" : "mt-44"
       } transition-all ease-in duration-500`}
     >
-      <div className="flex flex-col items-center gap-3">
+      <div id={section} className="flex flex-col items-center gap-3">
         <h1 className="font-manrope text-center font-semibold text-3xl lg:text-4xl text-transparent bg-clip-text bg-[radial-gradient(ellipse_at_center,#458dfc_100%,#458dfc,#fff)] text-shadow-neon">
           {title}
         </h1>
@@ -182,7 +183,10 @@ function Features({ id }: { id: number }) {
 
 function Community() {
   return (
-    <section className="h-auto lg:w-custom w-full flex items-center flex-col gap-11 pb-24 px-3 overflow-hidden">
+    <section
+      id="community"
+      className="h-auto lg:w-custom w-full flex items-center flex-col gap-11 pb-24 px-3 overflow-hidden"
+    >
       <div className="flex flex-col items-center gap-5">
         <h1 className="font-manrope font-semibold text-3xl lg:text-4xl text-transparent bg-clip-text bg-[radial-gradient(ellipse_at_center,#458dfc_100%,#458dfc,#fff)] text-shadow-neon">
           Hear from Our Community
