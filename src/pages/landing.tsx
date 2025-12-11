@@ -16,7 +16,7 @@ export default function Home() {
           desc="OMDL makes creating appointment simple"
           radiusTop="border-t border-t-zinc-300 lg:rounded-t-[100px] shadow-primary"
         />
-        <Section
+        <Section2
           id={2}
           section="services"
           title="Our Available Services"
@@ -155,25 +155,141 @@ function Features({ id }: { id: number }) {
     <div className="grid grid-cols-1 grid-rows-4 lg:grid-cols-3 lg:grid-rows-2 gap-7 w-full lg:w-[1200px] h-[750px] items-center justify-center">
       <div
         ref={ref1}
-        className={`${grid1ELementsStyle} ${
+        className={`overflow-hidden ${grid1ELementsStyle} ${
+          isVisible1 ? "translate-x-0" : "-translate-x-7"
+        }`}
+      >
+        <img
+          src="/assets/images/vision.png"
+          alt=""
+          className="w-full h-full object-cover lg:object-[-15px_center]"
+        />
+      </div>
+      <div
+        ref={ref2}
+        className={`overflow-hidden relative${grid2ELementsStyle} ${
+          isVisible2 ? "translate-x-0" : "translate-x-7"
+        }`}
+      >
+        <img
+          src="/assets/images/mission.png"
+          alt=""
+          className="w-full max-w-full h-auto object-contain absolute -top-6 lg:-top-14"
+        />
+      </div>
+      <div
+        ref={ref3}
+        className={`overflow-hidden ${grid2ELementsStyle} ${
+          isVisible3 ? "translate-x-0" : "-translate-x-7"
+        }`}
+      >
+        <img
+          src="/assets/images/goal.png"
+          alt=""
+          className="w-full max-w-full h-auto object-contain absolute -top-6 lg:-top-14"
+        />
+      </div>
+      <div
+        ref={ref4}
+        className={`overflow-hidden ${grid1ELementsStyle} ${
+          isVisible4 ? "translate-x-0" : "translate-x-7"
+        }`}
+      >
+        <img
+          src="/assets/images/visual.png"
+          alt=""
+          className="w-full h-full object-cover lg:object-[-50px_center]"
+        />
+      </div>
+    </div>
+  );
+}
+
+function Section2({
+  title,
+  desc,
+  id,
+  section,
+  radiusTop,
+}: {
+  title: string;
+  desc: string;
+  id: number;
+  section: string;
+  radiusTop: string;
+}) {
+  const [ref, inView] = useInView({
+    threshold: 0.05,
+    triggerOnce: true,
+  });
+
+  return (
+    <section
+      ref={ref}
+      className={`w-full h-auto rounded-[50px] flex justify-start items-center flex-col gap-11 px-8 lg:px-40 pb-44 pt-10 ${radiusTop} bg-off-white z-50 ${
+        inView ? "mt-0" : "mt-44"
+      } transition-all ease-in duration-500`}
+    >
+      <div id={section} className="flex flex-col items-center gap-3">
+        <h1 className="font-manrope text-center font-semibold text-3xl lg:text-4xl text-transparent bg-clip-text bg-[radial-gradient(ellipse_at_center,#458dfc_100%,#458dfc,#fff)] text-shadow-neon">
+          {title}
+        </h1>
+        <p className="text-center font-manrope text-lg text-zinc-700 font-medium tracking-wider">
+          {desc}
+        </p>
+      </div>
+      <Features2 id={id} />
+    </section>
+  );
+}
+
+function Features2({ id }: { id: number }) {
+  const { ref: ref1, inView: isVisible1 } = useInView({
+    threshold: 0.2,
+    triggerOnce: true,
+  });
+  const { ref: ref2, inView: isVisible2 } = useInView({
+    threshold: 0.2,
+    triggerOnce: true,
+  });
+  const { ref: ref3, inView: isVisible3 } = useInView({
+    threshold: 0.2,
+    triggerOnce: true,
+  });
+  const { ref: ref4, inView: isVisible4 } = useInView({
+    threshold: 0.2,
+    triggerOnce: true,
+  });
+
+  const layout1 = id === 1 ? "lg:col-span-1" : "lg:col-span-2";
+  const layout2 = id === 1 ? "lg:col-span-2" : "lg:col-span-1";
+
+  const grid1ELementsStyle = `border bg-system-white/80 border-zinc-300 ${layout1} row-span-1 w-full h-full rounded-2xl transition-transform duration-300 ease-in shadow-md`;
+  const grid2ELementsStyle = `border bg-system-white/80 border-zinc-300 ${layout2} row-span-1 w-full h-full rounded-2xl transition-transform duration-300 ease-in shadow-md`;
+
+  return (
+    <div className="grid grid-cols-1 grid-rows-4 lg:grid-cols-3 lg:grid-rows-2 gap-7 w-full lg:w-[1200px] h-[750px] items-center justify-center">
+      <div
+        ref={ref1}
+        className={`overflow-hidden ${grid1ELementsStyle} ${
           isVisible1 ? "translate-x-0" : "-translate-x-7"
         }`}
       ></div>
       <div
         ref={ref2}
-        className={`${grid2ELementsStyle} ${
+        className={`overflow-hidden relative${grid2ELementsStyle} ${
           isVisible2 ? "translate-x-0" : "translate-x-7"
         }`}
       ></div>
       <div
         ref={ref3}
-        className={`${grid2ELementsStyle} ${
+        className={`overflow-hidden ${grid2ELementsStyle} ${
           isVisible3 ? "translate-x-0" : "-translate-x-7"
         }`}
       ></div>
       <div
         ref={ref4}
-        className={`${grid1ELementsStyle} ${
+        className={`overflow-hidden ${grid1ELementsStyle} ${
           isVisible4 ? "translate-x-0" : "translate-x-7"
         }`}
       ></div>
