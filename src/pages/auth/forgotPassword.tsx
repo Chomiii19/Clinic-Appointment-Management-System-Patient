@@ -90,22 +90,23 @@ function CustomInput({
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
+  const [resetCode, setResetCode] = useState("");
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [password, setPassword] = useState("");
+  const [passwordMessage, setPasswordMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showResetCodeInput, setShowResetCodeInput] = useState(false);
+  const [showResetPasswordInput, setShowResetPasswordInput] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleInputEmail = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-
-    const userData = {
-      email,
-    };
 
     try {
       await axios.post(
         `${BACKEND_DOMAIN}/api/v1/auth/forgot-password`,
-        userData,
+        { email },
         {
           headers: {
             "Content-Type": "application/json",
@@ -114,9 +115,76 @@ export default function ForgotPassword() {
         }
       );
 
+      setShowResetCodeInput(true);
       setMessage(
-        "A temporary password has been sent to your email. Please log in using that password."
+        "A reset code was sent to your account's email. Please input the code."
       );
+    } catch (e) {
+      console.log(e);
+      if (axios.isAxiosError(e)) {
+        const err = e as AxiosError<{ message?: string }>;
+        setError(err.response?.data?.message ?? "Login failed.");
+      } else if (e instanceof Error) {
+        setError(e.message);
+      } else {
+        setError("An unexpected error occurred.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleInputCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      await axios.post(
+        `${BACKEND_DOMAIN}/api/v1/auth/reset-code`,
+        { email, resetCode },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+          withCredentials: true,
+        }
+      );
+
+      setShowResetPasswordInput(true);
+    } catch (e) {
+      console.log(e);
+      if (axios.isAxiosError(e)) {
+        const err = e as AxiosError<{ message?: string }>;
+        setError(err.response?.data?.message ?? "Login failed.");
+      } else if (e instanceof Error) {
+        setError(e.message);
+      } else {
+        setError("An unexpected error occurred.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      await axios.post(
+        `${BACKEND_DOMAIN}/api/v1/auth/reset-password`,
+        { email, password },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+          withCredentials: true,
+        }
+      );
+
+      setShowResetPasswordInput(true);
+
+      setPasswordMessage("Your password has successfully resetted.");
     } catch (e) {
       console.log(e);
       if (axios.isAxiosError(e)) {
@@ -136,56 +204,123 @@ export default function ForgotPassword() {
     <main className="flex flex-col w-full h-screen bg-system-white overflow-hidden font-manrope">
       <section className="w-full h-full flex items-center">
         <div className="bg-system-white h-full w-full lg:w-1/3 rounded-lg font-roboto text-zinc-900 py-3 px-8 flex flex-col gap-5 items-center justify-center ">
-          <div className="w-full">
-            <header className="flex flex-col mb-5">
-              <img src="/assets/icons/logo.png" className="w-20 mb-2" />
-              <h1 className="font-bold text-3xl">Forgotten Password?</h1>
-              <h3 className="text-sm mt-2 text-zinc-600">
-                Please enter your account's email and we will send a temporary
-                password.
-              </h3>
-            </header>
+          {showResetPasswordInput ? (
+            <div className="w-full">
+              <header className="flex flex-col mb-5">
+                <img src="/assets/icons/logo.png" className="w-20 mb-2" />
+                <h1 className="font-bold text-3xl">Reset Password</h1>
+                <h3 className="text-sm mt-2 text-zinc-600">
+                  Please enter your account's new password.
+                </h3>
+              </header>
 
-            <form
-              onSubmit={handleSubmit}
-              className="flex flex-col justify-center items-center w-full gap-2"
-            >
-              <div className="flex flex-col w-full">
-                <label htmlFor="email">Email</label>
-                <CustomInput
-                  type="email"
-                  name="email"
-                  placeholder="example@gmail.com"
-                  state={email}
-                  stateSetter={setEmail}
-                />
-              </div>
-
-              {error && <p className="text-red-500">{error}</p>}
-              {message && <p className="text-green-500">{message}</p>}
-
-              <button
-                type="submit"
-                disabled={loading}
-                className={`bg-zinc-900 rounded-md w-full py-1.5  text-zinc-200 font-bold justify-center items-center flex mt-3 ${
-                  loading ? "cursor-not-allowed" : "cursor-pointer"
-                }`}
+              <form
+                onSubmit={handleResetPassword}
+                className="flex flex-col justify-center items-center w-full gap-2"
               >
-                {loading ? (
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  "Submit"
-                )}
-              </button>
+                <div className="flex flex-col w-full">
+                  <label htmlFor="pasword">Password</label>
+                  <CustomInput
+                    type="password"
+                    name="password"
+                    placeholder=""
+                    state={password}
+                    stateSetter={setPassword}
+                  />
+                </div>
 
-              <footer className="w-full py-1 justify-center flex flex-row items-center gap-1 text-zinc-800 text-xs">
-                <p>Remembered your account?</p>{" "}
-                <Link className="text-primary" to={"/login"}>
-                  Log in
-                </Link>
-              </footer>
-            </form>
-          </div>
+                {passwordMessage && (
+                  <p className="text-green-500">{passwordMessage}</p>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className={`bg-zinc-900 rounded-md w-full py-1.5  text-zinc-200 font-bold justify-center items-center flex mt-3 ${
+                    loading ? "cursor-not-allowed" : "cursor-pointer"
+                  }`}
+                >
+                  {loading ? (
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    "Submit"
+                  )}
+                </button>
+
+                <footer className="w-full py-1 justify-center flex flex-row items-center gap-1 text-zinc-800 text-xs">
+                  <p>Resetted your password?</p>{" "}
+                  <Link className="text-primary" to={"/login"}>
+                    Log in
+                  </Link>
+                </footer>
+              </form>
+            </div>
+          ) : (
+            <div className="w-full">
+              <header className="flex flex-col mb-5">
+                <img src="/assets/icons/logo.png" className="w-20 mb-2" />
+                <h1 className="font-bold text-3xl">Forgotten Password?</h1>
+                <h3 className="text-sm mt-2 text-zinc-600">
+                  Please enter your account's email and we will send an OTP.
+                </h3>
+              </header>
+
+              <form
+                onSubmit={
+                  showResetCodeInput ? handleInputCode : handleInputEmail
+                }
+                className="flex flex-col justify-center items-center w-full gap-2"
+              >
+                {showResetCodeInput ? (
+                  <div className="flex flex-col w-full">
+                    <label htmlFor="resetCode">Reset Code</label>
+                    <CustomInput
+                      type="text"
+                      name="resetCode"
+                      placeholder=""
+                      state={resetCode}
+                      stateSetter={setResetCode}
+                    />
+                  </div>
+                ) : (
+                  <div className="flex flex-col w-full">
+                    <label htmlFor="email">Email</label>
+                    <CustomInput
+                      type="email"
+                      name="email"
+                      placeholder="example@gmail.com"
+                      state={email}
+                      stateSetter={setEmail}
+                    />
+                  </div>
+                )}
+
+                {error && <p className="text-red-500">{error}</p>}
+                {message && <p className="text-green-500">{message}</p>}
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className={`bg-zinc-900 rounded-md w-full py-1.5  text-zinc-200 font-bold justify-center items-center flex mt-3 ${
+                    loading ? "cursor-not-allowed" : "cursor-pointer"
+                  }`}
+                >
+                  {loading ? (
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    "Submit"
+                  )}
+                </button>
+
+                <footer className="w-full py-1 justify-center flex flex-row items-center gap-1 text-zinc-800 text-xs">
+                  <p>Remembered your account?</p>{" "}
+                  <Link className="text-primary" to={"/login"}>
+                    Log in
+                  </Link>
+                </footer>
+              </form>
+            </div>
+          )}
         </div>
 
         <div className="relative h-full hidden lg:flex lg:w-2/3">
