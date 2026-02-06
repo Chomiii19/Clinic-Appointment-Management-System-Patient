@@ -7,7 +7,11 @@ import { Archive, ChevronsUpDown, Eye, Wand } from "lucide-react";
 import { useState, type JSX } from "react";
 import { CustomCheckbox } from "../../../Checkbox";
 import { tableHeaders } from "./headers/appointments";
-import type { IAppointment, IDoctor } from "../../../../@types/interface";
+import type {
+  IAppointment,
+  IDoctor,
+  IService,
+} from "../../../../@types/interface";
 import dayjs from "dayjs";
 import Pagination from "../pagination";
 import { serviceColors, statusColors } from "../data";
@@ -67,7 +71,7 @@ function Table({
 
       return res.data.data.map((d: IDoctor) => ({
         value: d._id,
-        label: d.name,
+        label: `${d.firstname} ${d.surname}`,
         image: "/assets/images/profile-doctor.jpg",
       }));
     } catch (err) {
@@ -120,6 +124,18 @@ function Table({
   };
 
   const onPageChange = (page: number) => setCurrentPage(page);
+
+  // Helper function to get service name from service object or string
+  const getServiceName = (service: string | IService): string => {
+    return typeof service === "string" ? service : service.name;
+  };
+
+  // Helper function to normalize medical department to array
+  const normalizeMedicalDepartment = (
+    dept: string | IService | (string | IService)[],
+  ): (string | IService)[] => {
+    return Array.isArray(dept) ? dept : [dept];
+  };
 
   return (
     <div className="rounded-xl border border-zinc-300 dark:border-zinc-700 mt-3 bg-system-white dark:bg-system-black flex flex-col max-h-[80vh] overflow-hidden">
@@ -191,7 +207,6 @@ function Table({
                         </td>
                         <td className="py-2 px-5 font-medium text-zinc-950 dark:text-zinc-50">
                           <Link
-                            // @ts-expect-error: shut it
                             to={`/users/${appt.patientId._id}`}
                             className="flex items-center gap-2"
                           >
@@ -255,7 +270,7 @@ function Table({
                                 appt.doctorId
                                   ? {
                                       value: appt.doctorId._id,
-                                      label: appt.doctorId.name,
+                                      label: `${appt.doctorId.firstname} ${appt.doctorId.surname}`,
                                       image:
                                         "/assets/images/profile-doctor.jpg",
                                     }
@@ -273,28 +288,22 @@ function Table({
                         </td>
                         <td className="py-2 px-5 whitespace-nowrap">
                           <div className="flex gap-2 flex-nowrap">
-                            {Array.isArray(appt.medicalDepartment) ? (
-                              appt.medicalDepartment.map((svc, idx) => (
+                            {normalizeMedicalDepartment(
+                              appt.medicalDepartment,
+                            ).map((svc, idx) => {
+                              const serviceName = getServiceName(svc);
+                              return (
                                 <span
                                   key={idx}
                                   className={`px-3 py-1 rounded-full text-xs font-medium ${
-                                    serviceColors[svc] ||
+                                    serviceColors[serviceName] ||
                                     "bg-gray-50 text-gray-700 border border-gray-200"
                                   }`}
                                 >
-                                  {svc}
+                                  {serviceName}
                                 </span>
-                              ))
-                            ) : (
-                              <span
-                                className={`px-3 py-1 rounded-full text-xs font-medium ${
-                                  serviceColors[appt.medicalDepartment] ||
-                                  "bg-gray-50 text-gray-700 border border-gray-200"
-                                }`}
-                              >
-                                {appt.medicalDepartment}
-                              </span>
-                            )}
+                              );
+                            })}
                           </div>
                         </td>
                         <td className="px-5 py-2 align-middle">
