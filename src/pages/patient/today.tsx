@@ -6,7 +6,7 @@ import Table, {
 import { BACKEND_DOMAIN } from "../../configs/config";
 import axios from "axios";
 import type { SingleValue, MultiValue } from "react-select";
-import type { IAppointment } from "../../@types/interface";
+import type { IAppointment, IService } from "../../@types/interface";
 import Filter from "../../components/patient/appointmentTable/allAppointments/filter";
 import Header from "../../components/Header";
 import type { FiltersState } from "../../@types/types";
@@ -42,6 +42,14 @@ function Today() {
   });
 
   const tabs = ["All", "Today"];
+
+  // Helper function to normalize medical department to string array
+  const normalizeMedicalDepartmentToStrings = (
+    dept: string | IService | (string | IService)[],
+  ): string[] => {
+    const asArray = Array.isArray(dept) ? dept : [dept];
+    return asArray.map((item) => (typeof item === "string" ? item : item.name));
+  };
 
   const handleEditDoctor = async (formData: DoctorFormData, id: string) => {
     try {
@@ -212,7 +220,9 @@ function Today() {
             loading={loading}
             onEditClick={(doctor) => {
               setEditFormState({
-                medicalDepartment: doctor.medicalDepartment,
+                medicalDepartment: normalizeMedicalDepartmentToStrings(
+                  doctor.medicalDepartment,
+                ),
                 schedule: new Date(doctor.schedule).toISOString().slice(0, 16),
               });
 
