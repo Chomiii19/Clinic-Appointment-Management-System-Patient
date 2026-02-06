@@ -1,17 +1,17 @@
 import Select from "react-select";
 import { useEffect, useState } from "react";
+import axios from "axios";
 import Table, {
   type Options,
 } from "../../components/patient/appointmentTable/allAppointments/table";
-import { BACKEND_DOMAIN } from "../../configs/config";
-import axios from "axios";
-import type { SingleValue, MultiValue } from "react-select";
-import type { IAppointment } from "../../@types/interface";
 import Filter from "../../components/patient/appointmentTable/allAppointments/filter";
 import Header from "../../components/Header";
+import { BACKEND_DOMAIN } from "../../configs/config";
+import type { SingleValue, MultiValue } from "react-select";
+import type { IAppointment } from "../../@types/interface";
 import type { FiltersState } from "../../@types/types";
-import { medicalServicesStrings } from "../../components/patient/appointmentTable/data";
 
+// Form data type
 interface DoctorFormData {
   schedule: string;
   medicalDepartment: string[];
@@ -32,41 +32,19 @@ function Home() {
   const [editServiceId, setEditServiceId] = useState<string | null>(null);
   const [openAddModal, setOpenAddModal] = useState(false);
   const [formState, setFormState] = useState<DoctorFormData>({
-    medicalDepartment: [],
     schedule: "",
+    medicalDepartment: [],
   });
   const [openEditModal, setOpenEditModal] = useState(false);
   const [editFormState, setEditFormState] = useState<DoctorFormData>({
-    medicalDepartment: [],
     schedule: "",
+    medicalDepartment: [],
   });
 
   const tabs = ["All", "Today"];
 
-  const handleEditDoctor = async (formData: DoctorFormData, id: string) => {
-    try {
-      await axios.patch(
-        `${BACKEND_DOMAIN}/api/v1/appointments/${id}`,
-        {
-          schedule: formData.schedule,
-          medicalDepartment: formData.medicalDepartment,
-        },
-        { withCredentials: true },
-      );
-      setLoading(true);
-
-      setOpenEditModal(false);
-      setEditFormState({ schedule: "", medicalDepartment: [] });
-      setCurrentPage(1);
-    } catch (err) {
-      console.error("Doctor update failed:", err);
-    } finally {
-      setLoading(false);
-      setRefresh((prev) => prev + 1);
-    }
-  };
-
-  const handleAddService = async (formData: DoctorFormData) => {
+  // Add Appointment
+  const handleAddAppointment = async (formData: DoctorFormData) => {
     try {
       await axios.post(
         `${BACKEND_DOMAIN}/api/v1/appointments/create`,
@@ -78,15 +56,11 @@ function Home() {
       );
       setLoading(true);
       setOpenAddModal(false);
-
-      setFormState({
-        schedule: "",
-        medicalDepartment: [],
-      });
-
+      setFormState({ schedule: "", medicalDepartment: [] });
       setCurrentPage(1);
       setFilters({});
       setSearch("");
+      setRefresh((prev) => prev + 1);
     } catch (error) {
       console.error("Appointment creation failed:", error);
     } finally {
@@ -94,6 +68,33 @@ function Home() {
     }
   };
 
+  // Edit Appointment
+  const handleEditAppointment = async (
+    formData: DoctorFormData,
+    id: string,
+  ) => {
+    try {
+      await axios.patch(
+        `${BACKEND_DOMAIN}/api/v1/appointments/${id}`,
+        {
+          schedule: formData.schedule,
+          medicalDepartment: formData.medicalDepartment,
+        },
+        { withCredentials: true },
+      );
+      setLoading(true);
+      setOpenEditModal(false);
+      setEditFormState({ schedule: "", medicalDepartment: [] });
+      setCurrentPage(1);
+      setRefresh((prev) => prev + 1);
+    } catch (error) {
+      console.error("Appointment update failed:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch appointments
   useEffect(() => {
     const fetchAppointments = async () => {
       try {
@@ -101,32 +102,26 @@ function Home() {
         const params = new URLSearchParams();
 
         const statusFilter = filters["Status"] as SingleValue<Options> | null;
-        if (statusFilter?.value) {
-          params.append("status", statusFilter.value);
-        }
+        if (statusFilter?.value) params.append("status", statusFilter.value);
 
-        // Multi-value filter (Services)
         const servicesFilter = filters["Services"] as MultiValue<Options>;
-        if (servicesFilter && servicesFilter.length > 0) {
+        if (servicesFilter && servicesFilter.length > 0)
           params.append(
             "service",
             servicesFilter.map((s) => s.value).join(","),
           );
-        }
 
         const patientFilter = filters[
           "Patient Name"
         ] as SingleValue<Options> | null;
-        if (patientFilter?.value) {
+        if (patientFilter?.value)
           params.append("patientName", patientFilter.value);
-        }
 
         const doctorFilter = filters[
           "Doctor Assigned"
         ] as SingleValue<Options> | null;
-        if (doctorFilter?.value) {
+        if (doctorFilter?.value)
           params.append("doctorName", doctorFilter.value);
-        }
 
         if (search.trim()) params.append("search", search.trim());
         params.append("page", String(currentPage));
@@ -135,13 +130,30 @@ function Home() {
           `${BACKEND_DOMAIN}/api/v1/appointments?${params.toString()}`,
           { withCredentials: true },
         );
-        setLoading(false);
-        setAppointments(response.data.data);
+
+        // Normalize medicalDepartment to string[]
+        const normalizedData = response.data.data.map((appt: IAppointment) => {
+          let medicalDepartment: string[] = [];
+          if (Array.isArray(appt.medicalDepartment)) {
+            medicalDepartment = appt.medicalDepartment.map((dep) =>
+              typeof dep === "string" ? dep : dep.name,
+            );
+          } else if (typeof appt.medicalDepartment === "string") {
+            medicalDepartment = [appt.medicalDepartment];
+          } else if (
+            appt.medicalDepartment &&
+            "name" in appt.medicalDepartment
+          ) {
+            medicalDepartment = [appt.medicalDepartment.name];
+          }
+          return { ...appt, medicalDepartment };
+        });
+
+        setAppointments(normalizedData);
         setTotalPages(response.data.totalPages);
         setTotalItems(response.data.total);
         setPerPage(response.data.limit);
       } catch (error) {
-        setLoading(false);
         console.error("Failed to fetch appointments", error);
       } finally {
         setLoading(false);
@@ -153,13 +165,14 @@ function Home() {
 
   return (
     <main className="bg-off-white dark:bg-off-black dark:text-zinc-50 font-manrope h-screen w-full flex justify-center items-center gap-3 overflow-hidden">
+      {/* Add Appointment Modal */}
       {openAddModal && (
         <div
           onClick={() => setOpenAddModal(false)}
           className="absolute h-screen w-screen z-60 flex justify-center items-center bg-black/15 dark:bg-black/25"
         >
           <AddService
-            handleAddAdmin={handleAddService}
+            handleAddAdmin={handleAddAppointment}
             formState={formState}
             setFormState={setFormState}
             setOpenAddModal={setOpenAddModal}
@@ -167,6 +180,7 @@ function Home() {
         </div>
       )}
 
+      {/* Edit Appointment Modal */}
       {openEditModal && (
         <div
           onClick={() => setOpenEditModal(false)}
@@ -176,7 +190,8 @@ function Home() {
             formState={editFormState}
             setFormState={setEditFormState}
             onSubmit={() => {
-              if (editServiceId) handleEditDoctor(editFormState, editServiceId);
+              if (editServiceId)
+                handleEditAppointment(editFormState, editServiceId);
             }}
             onClose={() => setOpenEditModal(false)}
             title="Edit Appointment"
@@ -211,8 +226,21 @@ function Home() {
             setRefresh={setRefresh}
             loading={loading}
             onEditClick={(doctor) => {
+              // Normalize medicalDepartment before setting
+              const safeMedicalDepartments: string[] = Array.isArray(
+                doctor.medicalDepartment,
+              )
+                ? doctor.medicalDepartment.map((dep) =>
+                    typeof dep === "string" ? dep : dep.name,
+                  )
+                : typeof doctor.medicalDepartment === "string"
+                  ? [doctor.medicalDepartment]
+                  : doctor.medicalDepartment
+                    ? [doctor.medicalDepartment.name]
+                    : [];
+
               setEditFormState({
-                medicalDepartment: doctor.medicalDepartment,
+                medicalDepartment: safeMedicalDepartments,
                 schedule: new Date(doctor.schedule).toISOString().slice(0, 16),
               });
 
@@ -226,6 +254,7 @@ function Home() {
   );
 }
 
+/* ------------------- AddService Component ------------------- */
 function AddService({
   handleAddAdmin,
   formState,
@@ -238,33 +267,72 @@ function AddService({
   setOpenAddModal: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
   const [serviceOptions, setServiceOptions] = useState<Options[]>([]);
+  const [servicePrices, setServicePrices] = useState<{ [key: string]: number }>(
+    {},
+  );
+  const [estimatedFee, setEstimatedFee] = useState(0);
 
+  // Fetch available services
   useEffect(() => {
     const fetchServices = async () => {
       try {
         const res = await axios.get(`${BACKEND_DOMAIN}/api/v1/services`, {
           withCredentials: true,
         });
-        const services: Options[] = res.data.data.map(
+        const options: Options[] = res.data.data.map(
           (svc: { name: string }) => ({
             value: svc.name,
             label: svc.name,
           }),
         );
-        setServiceOptions(services);
+        setServiceOptions(options);
       } catch (err) {
         console.error("Failed to fetch services", err);
       }
     };
-
     fetchServices();
   }, []);
 
-  const safeValue =
-    formState.medicalDepartment?.map((dep) => ({
-      value: dep,
-      label: dep,
-    })) || [];
+  // Fetch prices whenever selected services change
+  useEffect(() => {
+    const fetchServicePrices = async () => {
+      if (!formState.medicalDepartment.length) {
+        setServicePrices({});
+        setEstimatedFee(0);
+        return;
+      }
+
+      try {
+        const res = await axios.post(
+          `${BACKEND_DOMAIN}/api/v1/services/prices`,
+          { names: formState.medicalDepartment },
+          { withCredentials: true },
+        );
+
+        if (res.data.status === "success") {
+          setServicePrices(res.data.data);
+
+          // Calculate total
+          const total = formState.medicalDepartment.reduce(
+            (sum, serviceName) => {
+              return sum + (res.data.data[serviceName] || 0);
+            },
+            0,
+          );
+          setEstimatedFee(total);
+        }
+      } catch (error) {
+        console.error("Failed to fetch service prices", error);
+      }
+    };
+
+    fetchServicePrices();
+  }, [formState.medicalDepartment]);
+
+  const safeValue = formState.medicalDepartment.map((dep) => ({
+    value: dep,
+    label: dep,
+  }));
 
   return (
     <form
@@ -273,7 +341,7 @@ function AddService({
         e.preventDefault();
         handleAddAdmin(formState);
       }}
-      className="absolute  bg-system-white dark:bg-system-black shadow-xl lg:w-[500px] h-auto rounded-2xl mx-5 lg:mx-0 md:max-h-[670px] no-scrollbar"
+      className="absolute bg-system-white dark:bg-system-black shadow-xl lg:w-[500px] h-auto rounded-2xl mx-5 lg:mx-0 md:max-h-[670px] no-scrollbar"
     >
       <header className="p-5 pb-2 border-b border-zinc-300 dark:border-zinc-700">
         <h1 className="font-bold text-lg">Create an Appointment</h1>
@@ -284,38 +352,64 @@ function AddService({
 
       <section className="p-5 pt-2 flex flex-col gap-3.5 text-sm">
         <div className="flex flex-col gap-1 w-full">
-          <label htmlFor="name">
+          <label>
             Services <span className="text-red-500">*</span>
           </label>
           <Select<{ value: string; label: string }, true>
             isMulti
             options={serviceOptions}
             value={safeValue}
-            onChange={(selected) => {
-              if (selected.length <= 3) {
-                setFormState((prev) => ({
-                  ...prev,
-                  medicalDepartment: selected.map((s) => s.value),
-                }));
-              }
-            }}
+            onChange={(selected) =>
+              setFormState((prev) => ({
+                ...prev,
+                medicalDepartment: selected.map((s) => s.value),
+              }))
+            }
           />
         </div>
 
+        {formState.medicalDepartment.length > 0 && (
+          <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+            <div className="flex flex-col gap-2">
+              <p className="text-xs font-medium text-blue-600 dark:text-blue-400">
+                Service Breakdown
+              </p>
+              {formState.medicalDepartment.map((serviceName, idx) => (
+                <div
+                  key={idx}
+                  className="flex items-center justify-between text-sm"
+                >
+                  <span className="text-zinc-600 dark:text-zinc-400">
+                    {serviceName}
+                  </span>
+                  <span className="font-medium text-zinc-900 dark:text-zinc-50">
+                    ₱{(servicePrices[serviceName] || 0).toLocaleString()}
+                  </span>
+                </div>
+              ))}
+              <div className="pt-2 mt-2 border-t border-blue-200 dark:border-blue-700 flex justify-between">
+                <span className="text-sm font-semibold text-blue-700 dark:text-blue-300">
+                  Estimated Total
+                </span>
+                <span className="text-lg font-bold text-blue-900 dark:text-blue-100">
+                  ₱{estimatedFee.toLocaleString()}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="flex flex-col gap-1 w-full">
-          <label htmlFor="schedule">
+          <label>
             Schedule <span className="text-red-500">*</span>
           </label>
           <input
             required
             type="datetime-local"
-            name="schedule"
-            id="schedule"
             value={formState.schedule}
             onChange={(e) =>
               setFormState((prev) => ({ ...prev, schedule: e.target.value }))
             }
-            placeholder=""
             className="border border-zinc-300 dark:border-zinc-700 outline-none rounded-md px-2 py-0.5 w-full"
           />
         </div>
@@ -324,10 +418,7 @@ function AddService({
           <button
             onClick={() => {
               setOpenAddModal(false);
-              setFormState({
-                medicalDepartment: [],
-                schedule: "",
-              });
+              setFormState({ schedule: "", medicalDepartment: [] });
             }}
             type="button"
             className="cursor-pointer"
@@ -346,6 +437,7 @@ function AddService({
   );
 }
 
+/* ------------------- ServiceModal Component ------------------- */
 function ServiceModal({
   formState,
   setFormState,
@@ -359,10 +451,13 @@ function ServiceModal({
   onClose: () => void;
   title: string;
 }) {
-  const medicalServiceOptions = medicalServicesStrings.map((s) => ({
-    value: s,
-    label: s,
+  // compute serviceOptions on render
+  const serviceOptions = formState.medicalDepartment.map((dep) => ({
+    value: dep,
+    label: dep,
   }));
+
+  const safeValue = serviceOptions; // same thing
 
   return (
     <form
@@ -379,40 +474,33 @@ function ServiceModal({
 
       <section className="p-5 pt-2 flex flex-col gap-3.5 text-sm">
         <div className="flex flex-col gap-1 w-full">
-          <label htmlFor="name">
+          <label>
             Services <span className="text-red-500">*</span>
           </label>
           <Select<{ value: string; label: string }, true>
             isMulti
-            options={medicalServiceOptions}
-            value={medicalServiceOptions.filter((o) =>
-              formState.medicalDepartment.includes(o.value),
-            )}
-            onChange={(selected) => {
-              if (selected.length <= 3) {
-                setFormState((prev) => ({
-                  ...prev,
-                  medicalDepartment: selected.map((s) => s.value),
-                }));
-              }
-            }}
+            options={serviceOptions}
+            value={safeValue}
+            onChange={(selected) =>
+              setFormState((prev) => ({
+                ...prev,
+                medicalDepartment: selected.map((s) => s.value),
+              }))
+            }
           />
         </div>
 
         <div className="flex flex-col gap-1 w-full">
-          <label htmlFor="schedule">
-            Schedule<span className="text-red-500">*</span>
+          <label>
+            Schedule <span className="text-red-500">*</span>
           </label>
           <input
             required
             type="datetime-local"
-            name="schedule"
-            id="schedule"
             value={formState.schedule}
             onChange={(e) =>
               setFormState((prev) => ({ ...prev, schedule: e.target.value }))
             }
-            placeholder=""
             className="border border-zinc-300 dark:border-zinc-700 outline-none rounded-md px-2 py-0.5 w-full"
           />
         </div>

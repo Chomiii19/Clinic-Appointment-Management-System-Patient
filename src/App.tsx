@@ -14,42 +14,52 @@ import Appointments from "./pages/admin/app/appointments/appointments";
 import TodayAppointments from "./pages/admin/app/appointments/todayAppointments";
 import Patients from "./pages/admin/app/patients";
 import ManageAdmins from "./pages/admin/settings/manageAdmins";
-import EditAccount from "./pages/patient/editAccount";
+import EditAccount from "./pages/admin/app/editAccount";
 import ManageDoctors from "./pages/admin/settings/manageDoctors";
 import ManageSchedules from "./pages/admin/settings/manageSchedules";
 import ManageTodaySchedules from "./pages/admin/settings/manageTodaySchedules";
 import ManageServices from "./pages/admin/settings/manageServices";
 import PolictyTerms from "./pages/admin/settings/policyTerms";
+import ViewAppointment from "./pages/admin/app/viewAppointments";
+import { AuthProvider } from "./contexts/AuthContext";
 
 function App() {
   return (
-    <DarkModeProvider>
-      <Routes>
-        <Route path="/" element={<Landing />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
+    <AuthProvider>
+      <DarkModeProvider>
+        <Routes>
+          <Route path="/" element={<Landing />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
 
-        {/* Patient */}
-        <Route path="/users/:id/appointments" element={<Home />} />
-        <Route path="/users/:id/appointments/today" element={<Today />} />
-        <Route path="/users/:id" element={<ViewAccount />} />
+          {/* Patient */}
+          <Route path="/users/:id/appointments" element={<Home />} />
+          <Route path="/users/:id/appointments/today" element={<Today />} />
 
-        {/* Admin */}
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/appointments" element={<Appointments />} />
-        <Route path="/appointments/archive" element={<ArchiveAppointments />} />
-        <Route path="/appointments/today" element={<TodayAppointments />} />
-        <Route path="/patients" element={<Patients />} />
-        <Route path="/admins" element={<ManageAdmins />} />
-        <Route path="/users/:id/edit" element={<EditAccount />} />
-        <Route path="/doctors" element={<ManageDoctors />} />
-        <Route path="/schedules" element={<ManageSchedules />} />
-        <Route path="/schedules/today" element={<ManageTodaySchedules />} />
-        <Route path="/services" element={<ManageServices />} />
-        <Route path="/policies-and-terms" element={<PolictyTerms />} />
-      </Routes>
-    </DarkModeProvider>
+          {/* Admin */}
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/appointments" element={<Appointments />} />
+          <Route
+            path="/appointments/archive"
+            element={<ArchiveAppointments />}
+          />
+          <Route path="/appointments/today" element={<TodayAppointments />} />
+          <Route path="/patients" element={<Patients />} />
+          <Route path="/admins" element={<ManageAdmins />} />
+          <Route path="/users/:id/edit" element={<EditAccount />} />
+          <Route path="/doctors" element={<ManageDoctors />} />
+          <Route path="/schedules" element={<ManageSchedules />} />
+          <Route path="/schedules/today" element={<ManageTodaySchedules />} />
+          <Route path="/services" element={<ManageServices />} />
+
+          {/* Both */}
+          <Route path="/users/:id" element={<ViewAccount />} />
+          <Route path="/appointments/:id" element={<ViewAppointment />} />
+          <Route path="/policies-and-terms" element={<PolictyTerms />} />
+        </Routes>
+      </DarkModeProvider>
+    </AuthProvider>
   );
 }
 

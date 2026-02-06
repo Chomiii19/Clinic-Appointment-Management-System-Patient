@@ -3,8 +3,8 @@ import Select, {
   type OptionProps,
   type SingleValueProps,
 } from "react-select";
-import { ArrowUpRight, ChevronsUpDown, Upload, Wand, X } from "lucide-react";
-import { useRef, useState, type JSX } from "react";
+import { ChevronsUpDown, Wand } from "lucide-react";
+import { useState, type JSX } from "react";
 import { CustomCheckbox } from "../../../Checkbox";
 import { tableHeaders } from "./headers/archiveAppointments";
 import type { IAppointment, IDoctor } from "../../../../@types/interface";
@@ -16,7 +16,6 @@ import axios from "axios";
 import { doctorSelectStyles } from "./styles";
 import { useDarkMode } from "../../../../hooks/useDarkMode";
 import { Link } from "react-router-dom";
-import { truncateFilename } from "../../../../utils/truncate";
 
 export type Options = {
   value: string;
@@ -105,10 +104,16 @@ function Table({
   };
 
   const handleArchive = async (id: string) => {
+    const confirmed = confirm(
+      "Are you sure you want to archive this appointment?",
+    );
+
+    if (!confirmed) return;
+
     try {
       await axios.patch(
         `${BACKEND_DOMAIN}/api/v1/appointments/${id}/archive`,
-        { archive: false },
+        { archive: true },
         { withCredentials: true },
       );
 
@@ -125,60 +130,6 @@ function Table({
       newSelected[appt._id] = checked;
     });
     setSelectedRows(newSelected);
-  };
-
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const handleButtonClick = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleFileChange = async (
-    event: React.ChangeEvent<HTMLInputElement>,
-    apptId: string,
-  ) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("appointmentId", apptId);
-
-    try {
-      const { data } = await axios.post(
-        `${BACKEND_DOMAIN}/api/v1/medical-records/upload`,
-        formData,
-        {
-          withCredentials: true,
-        },
-      );
-      console.log("Upload success:", data);
-      setRefresh((prev) => prev + 1);
-    } catch (err) {
-      console.error("Upload failed:", err);
-    }
-  };
-
-  const handleDeleteMedicalRecord = async (
-    appointmentId: string,
-    recordId: string,
-  ) => {
-    if (!confirm("Are you sure you want to delete this medical record?"))
-      return;
-
-    try {
-      await axios.delete(
-        `${BACKEND_DOMAIN}/api/v1/medical-records/${recordId}/appointments/${appointmentId}`,
-        { withCredentials: true },
-      );
-
-      setRefresh((prev) => prev + 1);
-
-      console.log("Medical record deleted successfully");
-    } catch (err) {
-      console.error("Failed to delete medical record:", err);
-      alert("Failed to delete medical record");
-    }
   };
 
   const onPageChange = (page: number) => setCurrentPage(page);
@@ -267,7 +218,6 @@ function Table({
                             </p>
                           </Link>
                         </td>
-                        <td className="py-2 px-5">{appt.email}</td>
                         <td className="py-2 px-5">
                           <span
                             className={`px-2 py-0.5 rounded-sm text-white text-xs font-bold ${
@@ -359,52 +309,6 @@ function Table({
                               </span>
                             )}
                           </div>
-                        </td>
-                        <td className="py-2 px-5 whitespace-nowrap">
-                          {appt?.medicalRecord?.fileUrl ? (
-                            <div className="flex items-center gap-1">
-                              <a
-                                href={appt?.medicalRecord?.fileUrl ?? "/"}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center px-2 border border-green-500 text-green-500 bg-green-200/20 rounded-md w-fit"
-                              >
-                                {truncateFilename(
-                                  appt?.medicalRecord?.filename ?? "",
-                                )}
-                                <ArrowUpRight className="w-4" />
-                              </a>
-                              <button
-                                onClick={() =>
-                                  handleDeleteMedicalRecord(
-                                    appt._id,
-                                    appt?.medicalRecord?._id,
-                                  )
-                                }
-                              >
-                                <X className="w-6 text-red-500 cursor-pointer" />
-                              </button>
-                            </div>
-                          ) : appt.status === "Completed" ? (
-                            <>
-                              <button
-                                type="button"
-                                onClick={handleButtonClick}
-                                className="flex items-center gap-1 bg-primary text-white rounded-md px-2 py-0.5 font-semibold cursor-pointer"
-                              >
-                                <Upload className="w-4" /> Upload
-                              </button>
-
-                              <input
-                                type="file"
-                                ref={fileInputRef}
-                                onChange={(e) => handleFileChange(e, appt._id)}
-                                className="hidden"
-                              />
-                            </>
-                          ) : (
-                            "none"
-                          )}
                         </td>
                         <td className="px-5">
                           {appt.status === "Pending" && (

@@ -2,10 +2,10 @@ import type { FiltersState } from "./types";
 
 export interface IAppointment {
   _id: string;
-  patientId: number;
+  patientId: IUser;
   doctorId: IDoctor;
   patientName: string;
-  medicalDepartment: string[];
+  medicalDepartment: string | IService | (string | IService)[];
   medicalRecord: {
     _id: string;
     filename: string;

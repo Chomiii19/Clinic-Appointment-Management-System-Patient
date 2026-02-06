@@ -20,7 +20,11 @@ interface DoctorFormData {
 }
 
 function Appointments() {
-  const [openSidebar, setOpenSidebar] = useState(false);
+  const [openSidebar, setOpenSidebar] = useState(
+    () =>
+      window.innerWidth >= 1024 &&
+      localStorage.getItem("sidebarOpen") === "true",
+  );
   const [appointments, setAppointments] = useState<IAppointment[]>([]);
   const [filters, setFilters] = useState<FiltersState>({});
   const [search, setSearch] = useState("");
@@ -198,7 +202,12 @@ function AddService({
   setOpenAddModal: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
   const [serviceOptions, setServiceOptions] = useState<Options[]>([]);
+  const [servicePrices, setServicePrices] = useState<{ [key: string]: number }>(
+    {},
+  );
+  const [estimatedFee, setEstimatedFee] = useState(0);
 
+  // Fetch available services
   useEffect(() => {
     const fetchServices = async () => {
       try {
@@ -220,6 +229,51 @@ function AddService({
     fetchServices();
   }, []);
 
+  // Fetch prices for selected services
+  useEffect(() => {
+    const fetchServicePrices = async () => {
+      if (
+        !formState.medicalDepartment ||
+        formState.medicalDepartment.length === 0
+      ) {
+        setEstimatedFee(0);
+        setServicePrices({});
+        return;
+      }
+
+      try {
+        const response = await axios.post(
+          `${BACKEND_DOMAIN}/api/v1/services/prices`,
+          { names: formState.medicalDepartment },
+          { withCredentials: true },
+        );
+
+        if (response.data.status === "success") {
+          setServicePrices(response.data.data);
+
+          // Calculate total estimated fee
+          const total = formState.medicalDepartment.reduce(
+            (sum, serviceName) => {
+              return sum + (response.data.data[serviceName] || 0);
+            },
+            0,
+          );
+
+          setEstimatedFee(total);
+
+          // Log if any services were not found
+          if (response.data.notFound && response.data.notFound.length > 0) {
+            console.warn("Services not found:", response.data.notFound);
+          }
+        }
+      } catch (error) {
+        console.error("Failed to fetch service prices", error);
+      }
+    };
+
+    fetchServicePrices();
+  }, [formState.medicalDepartment]);
+
   const safeValue =
     formState.medicalDepartment?.map((dep) => ({
       value: dep,
@@ -233,7 +287,7 @@ function AddService({
         e.preventDefault();
         handleAddAdmin(formState);
       }}
-      className="absolute  bg-system-white dark:bg-system-black shadow-xl lg:w-[500px] h-auto rounded-2xl mx-5 lg:mx-0 md:max-h-[670px] no-scrollbar"
+      className="absolute bg-system-white dark:bg-system-black shadow-xl lg:w-[500px] h-auto rounded-2xl mx-5 lg:mx-0 md:max-h-[670px] no-scrollbar"
     >
       <header className="p-5 pb-2 border-b border-zinc-300 dark:border-zinc-700">
         <h1 className="font-bold text-lg">Create an Appointment</h1>
@@ -258,6 +312,7 @@ function AddService({
             className="border border-zinc-300 dark:border-zinc-700 outline-none rounded-md px-2 py-0.5 w-full"
           />
         </div>
+
         <div className="flex flex-col gap-1 w-full">
           <label htmlFor="name">
             Services <span className="text-red-500">*</span>
@@ -276,6 +331,42 @@ function AddService({
             }}
           />
         </div>
+
+        {/* Estimated Fee Display */}
+        {formState.medicalDepartment.length > 0 && (
+          <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+            <div className="flex flex-col gap-2">
+              <p className="text-xs font-medium text-blue-600 dark:text-blue-400">
+                Service Breakdown
+              </p>
+
+              {formState.medicalDepartment.map((serviceName, idx) => (
+                <div
+                  key={idx}
+                  className="flex items-center justify-between text-sm"
+                >
+                  <span className="text-zinc-600 dark:text-zinc-400">
+                    {serviceName}
+                  </span>
+                  <span className="font-medium text-zinc-900 dark:text-zinc-50">
+                    ₱{(servicePrices[serviceName] || 0).toLocaleString()}
+                  </span>
+                </div>
+              ))}
+
+              <div className="pt-2 mt-2 border-t border-blue-200 dark:border-blue-700">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-semibold text-blue-700 dark:text-blue-300">
+                    Estimated Total
+                  </span>
+                  <span className="text-lg font-bold text-blue-900 dark:text-blue-100">
+                    ₱{estimatedFee.toLocaleString()}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="flex flex-col gap-1 w-full">
           <label htmlFor="schedule">

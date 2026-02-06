@@ -1,8 +1,6 @@
 import {
-  AtSign,
   CircleUser,
   ClipboardClock,
-  FileBox,
   Hospital,
   ShieldUser,
   Sparkles,
@@ -16,14 +14,6 @@ export const tableHeaders = [
     filter: true,
     singleValue: true,
     options: [],
-    sortable: true,
-  },
-  {
-    name: "Email",
-    icon: <AtSign className="w-4" />,
-    filter: false,
-    singleValue: false,
-    options: [{ value: "", label: "" }],
     sortable: true,
   },
   {
@@ -54,14 +44,6 @@ export const tableHeaders = [
     name: "Services",
     icon: <Hospital className="w-4" />,
     filter: true,
-    singleValue: false,
-    options: [],
-    sortable: false,
-  },
-  {
-    name: "Medical Record",
-    icon: <FileBox className="w-4" />,
-    filter: false,
     singleValue: false,
     options: [],
     sortable: false,

@@ -20,7 +20,11 @@ interface DoctorFormData {
 }
 
 function ManageDoctors() {
-  const [openSidebar, setOpenSidebar] = useState(false);
+  const [openSidebar, setOpenSidebar] = useState(
+    () =>
+      window.innerWidth >= 1024 &&
+      localStorage.getItem("sidebarOpen") === "true",
+  );
   const [data, setData] = useState<IDoctor[]>([]);
   const [filters, setFilters] = useState<FiltersState>({});
   const [search, setSearch] = useState("");

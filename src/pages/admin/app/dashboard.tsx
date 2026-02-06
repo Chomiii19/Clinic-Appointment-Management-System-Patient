@@ -15,7 +15,11 @@ import dayjs from "dayjs";
 import formatPrice from "../../../utils/formatPrice";
 
 function Dashboard() {
-  const [openSidebar, setOpenSidebar] = useState(false);
+  const [openSidebar, setOpenSidebar] = useState(
+    () =>
+      window.innerWidth >= 1024 &&
+      localStorage.getItem("sidebarOpen") === "true",
+  );
 
   return (
     <main className="bg-off-white dark:bg-off-black dark:text-zinc-50 font-manrope h-screen w-full flex gap-3">

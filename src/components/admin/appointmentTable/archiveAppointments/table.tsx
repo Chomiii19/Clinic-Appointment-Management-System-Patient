@@ -105,10 +105,16 @@ function Table({
   };
 
   const handleArchive = async (id: string) => {
+    const confirmed = confirm(
+      "Are you sure you want to archive this appointment?",
+    );
+
+    if (!confirmed) return;
+
     try {
       await axios.patch(
         `${BACKEND_DOMAIN}/api/v1/appointments/${id}/archive`,
-        { archive: false },
+        { archive: true },
         { withCredentials: true },
       );
 
@@ -267,7 +273,6 @@ function Table({
                             </p>
                           </Link>
                         </td>
-                        <td className="py-2 px-5">{appt.email}</td>
                         <td className="py-2 px-5">
                           <span
                             className={`px-2 py-0.5 rounded-sm text-white text-xs font-bold ${
@@ -359,52 +364,6 @@ function Table({
                               </span>
                             )}
                           </div>
-                        </td>
-                        <td className="py-2 px-5 whitespace-nowrap">
-                          {appt?.medicalRecord?.fileUrl ? (
-                            <div className="flex items-center gap-1">
-                              <a
-                                href={appt?.medicalRecord?.fileUrl ?? "/"}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center px-2 border border-green-500 text-green-500 bg-green-200/20 rounded-md w-fit"
-                              >
-                                {truncateFilename(
-                                  appt?.medicalRecord?.filename ?? "",
-                                )}
-                                <ArrowUpRight className="w-4" />
-                              </a>
-                              <button
-                                onClick={() =>
-                                  handleDeleteMedicalRecord(
-                                    appt._id,
-                                    appt?.medicalRecord?._id,
-                                  )
-                                }
-                              >
-                                <X className="w-6 text-red-500 cursor-pointer" />
-                              </button>
-                            </div>
-                          ) : appt.status === "Completed" ? (
-                            <>
-                              <button
-                                type="button"
-                                onClick={handleButtonClick}
-                                className="flex items-center gap-1 bg-primary text-white rounded-md px-2 py-0.5 font-semibold cursor-pointer"
-                              >
-                                <Upload className="w-4" /> Upload
-                              </button>
-
-                              <input
-                                type="file"
-                                ref={fileInputRef}
-                                onChange={(e) => handleFileChange(e, appt._id)}
-                                className="hidden"
-                              />
-                            </>
-                          ) : (
-                            "none"
-                          )}
                         </td>
                         <td className="px-5">
                           {appt.status === "Pending" && (

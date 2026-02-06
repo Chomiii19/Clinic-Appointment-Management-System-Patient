@@ -1,5 +1,4 @@
 import {
-  AtSign,
   CircleUser,
   ClipboardClock,
   Hospital,
@@ -15,14 +14,6 @@ export const tableHeaders = [
     filter: true,
     singleValue: true,
     options: [],
-    sortable: true,
-  },
-  {
-    name: "Email",
-    icon: <AtSign className="w-4" />,
-    filter: false,
-    singleValue: false,
-    options: [{ value: "", label: "" }],
     sortable: true,
   },
   {

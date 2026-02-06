@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import axios, { AxiosError } from "axios";
 import { BACKEND_DOMAIN } from "../../configs/config";
 
@@ -90,11 +90,14 @@ function CustomInput({
 
 export default function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const from = (location.state as { from?: string })?.from || null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -110,18 +113,27 @@ export default function Login() {
         `${BACKEND_DOMAIN}/api/v1/auth/login`,
         userData,
         {
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           withCredentials: true,
         },
       );
 
       console.log("Login success:", response.data);
 
-      if (response.data.user.role === "user")
-        navigate(`/users/${response.data.user.id}/appointments`);
-      else if (response.data.user.role === "admin") navigate("/dashboard");
+      // If they came from a protected route, go there
+      if (from) {
+        navigate(from, { replace: true }); // go back to previous page
+        return;
+      }
+
+      // fallback to role-based redirect
+      if (response.data.user.role === "user") {
+        navigate(`/users/${response.data.user._id}/appointments`, {
+          replace: true,
+        });
+      } else if (response.data.user.role === "admin") {
+        navigate("/dashboard", { replace: true });
+      }
     } catch (e) {
       console.log(e);
       if (axios.isAxiosError(e)) {

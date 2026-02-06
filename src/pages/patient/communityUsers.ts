@@ -8,17 +8,15 @@ interface Iuser {
 
 const users = [
   {
-    name: "Gerald Makiling",
+    name: "Errol Hernandez",
     username: "@GerMakiling",
-    comment:
-      "Super convenient yung online appointment system ng Olympus Medical. Hindi ko na kailangan pumila nang matagal para lang magpa-schedule. May reminders pa and mabilis makita yung results. Ang dali-dali ng proseso—highly recommended!",
+    comment: "Very accomodating and fast lab reults",
     rowSpan: "row-span-2",
   },
   {
-    name: "Andres Cruz",
+    name: "Denzy clein Sacopon",
     username: "@shaiii29",
-    comment:
-      "As a parent, sobrang helpful nito. Ang bilis mag-book para sa checkup ng anak ko, tapos may notifications pa bago dumating yung schedule. Hassle-free talaga.",
+    comment: "The ambiance is okay, not irritating❤️❤️❤️❤️",
     rowSpan: "row-span-1",
   },
   {
