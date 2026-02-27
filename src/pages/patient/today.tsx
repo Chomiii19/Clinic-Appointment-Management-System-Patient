@@ -8,7 +8,7 @@ import axios from "axios";
 import type { SingleValue, MultiValue } from "react-select";
 import type { IAppointment, IService } from "../../@types/interface";
 import Filter from "../../components/patient/appointmentTable/allAppointments/filter";
-import Header from "../../components/Header";
+import Header from "./Header";
 import type { FiltersState } from "../../@types/types";
 import { medicalServicesStrings } from "../../components/patient/appointmentTable/data";
 

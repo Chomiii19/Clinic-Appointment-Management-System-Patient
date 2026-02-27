@@ -25,13 +25,11 @@ import {
   statusColors,
   serviceColors,
 } from "../../components/admin/adminTable/data";
-import { useAuth } from "../../hooks/useAuth";
 
 type TabType = "account" | "appointments";
 
 function ViewAccount() {
   const { id } = useParams<{ id: string }>();
-  const { currentUser } = useAuth();
   const navigate = useNavigate();
   const [user, setUser] = useState<IUser | null>(null);
   const [appointments, setAppointments] = useState<IAppointment[]>([]);
@@ -102,13 +100,11 @@ function ViewAccount() {
   if (loading) {
     return (
       <main className="bg-off-white dark:bg-off-black dark:text-zinc-50 font-manrope h-screen w-full flex gap-3 overflow-hidden">
-        {currentUser?.role === "admin" && (
-          <Sidebar
-            page="patients"
-            openSidebar={openSidebar}
-            setOpenSidebar={setOpenSidebar}
-          />
-        )}
+        <Sidebar
+          page="patients"
+          openSidebar={openSidebar}
+          setOpenSidebar={setOpenSidebar}
+        />
         <div className="w-full h-screen flex flex-col gap-4 lg:ml-58 p-5 overflow-hidden">
           <div className="flex items-center gap-1 w-full">
             <Menu
@@ -130,13 +126,11 @@ function ViewAccount() {
   if (!user) {
     return (
       <main className="bg-off-white dark:bg-off-black dark:text-zinc-50 font-manrope h-screen w-full flex gap-3 overflow-hidden">
-        {currentUser?.role === "admin" && (
-          <Sidebar
-            page="patients"
-            openSidebar={openSidebar}
-            setOpenSidebar={setOpenSidebar}
-          />
-        )}
+        <Sidebar
+          page="patients"
+          openSidebar={openSidebar}
+          setOpenSidebar={setOpenSidebar}
+        />
         <div className="w-full h-screen flex flex-col gap-4 lg:ml-58 p-5 overflow-hidden">
           <div className="flex items-center gap-1 w-full">
             <Menu
@@ -157,13 +151,11 @@ function ViewAccount() {
 
   return (
     <main className="bg-off-white dark:bg-off-black dark:text-zinc-50 font-manrope h-screen w-full flex gap-3 overflow-hidden">
-      {currentUser?.role === "admin" && (
-        <Sidebar
-          page="patients"
-          openSidebar={openSidebar}
-          setOpenSidebar={setOpenSidebar}
-        />
-      )}
+      <Sidebar
+        page="patients"
+        openSidebar={openSidebar}
+        setOpenSidebar={setOpenSidebar}
+      />
 
       <div className="w-full h-screen flex flex-col gap-4 lg:ml-58 p-5 overflow-y-auto">
         <div className="flex items-center gap-1 w-full">

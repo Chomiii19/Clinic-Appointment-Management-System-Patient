@@ -5,7 +5,7 @@ import Table, {
   type Options,
 } from "../../components/patient/appointmentTable/allAppointments/table";
 import Filter from "../../components/patient/appointmentTable/allAppointments/filter";
-import Header from "../../components/Header";
+import Header from "./Header";
 import { BACKEND_DOMAIN } from "../../configs/config";
 import type { SingleValue, MultiValue } from "react-select";
 import type { IAppointment } from "../../@types/interface";

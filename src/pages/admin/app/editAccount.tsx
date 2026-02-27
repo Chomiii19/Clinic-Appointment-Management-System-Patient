@@ -15,6 +15,7 @@ import type { IUser } from "../../../@types/interface";
 import Sidebar from "../../../components/Sidebar";
 import Header from "../../../components/Header";
 import { Menu } from "lucide-react";
+import { useAuth } from "../../../hooks/useAuth";
 
 interface EditFormData {
   firstname: string;
@@ -34,6 +35,7 @@ function EditAccount() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [user, setUser] = useState<IUser | null>(null);
+  const { currentUser } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [imageUploading, setImageUploading] = useState(false);
@@ -255,11 +257,13 @@ function EditAccount() {
   if (loading) {
     return (
       <main className="bg-off-white dark:bg-off-black dark:text-zinc-50 font-manrope h-screen w-full flex gap-3 overflow-hidden">
-        <Sidebar
-          page="patients"
-          openSidebar={openSidebar}
-          setOpenSidebar={setOpenSidebar}
-        />
+        {currentUser?.role === "admin" && (
+          <Sidebar
+            page="patients"
+            openSidebar={openSidebar}
+            setOpenSidebar={setOpenSidebar}
+          />
+        )}
         <div className="w-full h-screen flex flex-col gap-4 lg:ml-58 p-5 overflow-hidden">
           <div className="flex items-center gap-1 w-full">
             <Menu
@@ -283,11 +287,13 @@ function EditAccount() {
   if (!user) {
     return (
       <main className="bg-off-white dark:bg-off-black dark:text-zinc-50 font-manrope h-screen w-full flex gap-3 overflow-hidden">
-        <Sidebar
-          page="patients"
-          openSidebar={openSidebar}
-          setOpenSidebar={setOpenSidebar}
-        />
+        {currentUser?.role === "admin" && (
+          <Sidebar
+            page="patients"
+            openSidebar={openSidebar}
+            setOpenSidebar={setOpenSidebar}
+          />
+        )}
         <div className="w-full h-screen flex flex-col gap-4 lg:ml-58 p-5 overflow-hidden">
           <div className="flex items-center gap-1 w-full">
             <Menu
@@ -309,11 +315,13 @@ function EditAccount() {
   // ──────────── MAIN RENDER ────────────
   return (
     <main className="bg-off-white dark:bg-off-black dark:text-zinc-50 font-manrope h-screen w-full flex gap-3 overflow-hidden">
-      <Sidebar
-        page="patients"
-        openSidebar={openSidebar}
-        setOpenSidebar={setOpenSidebar}
-      />
+      {currentUser?.role === "admin" && (
+        <Sidebar
+          page="patients"
+          openSidebar={openSidebar}
+          setOpenSidebar={setOpenSidebar}
+        />
+      )}
 
       <div className="w-full h-screen flex flex-col gap-4 lg:ml-58 p-5 overflow-y-auto">
         <div className="flex items-center gap-1 w-full">

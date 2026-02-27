@@ -4,7 +4,7 @@ import { type IUser } from "../@types/interface";
 import { AuthContext } from "../hooks/useAuth";
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [user, setUser] = useState<IUser | null>(null);
+  const [currentUser, setCurrentUser] = useState<IUser | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -14,9 +14,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           withCredentials: true, // IMPORTANT if using cookies
         });
 
-        setUser(res.data.data);
+        setCurrentUser(res.data.data);
       } catch {
-        setUser(null);
+        setCurrentUser(null);
       } finally {
         setLoading(false);
       }
@@ -26,7 +26,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading }}>
+    <AuthContext.Provider value={{ currentUser, loading }}>
       {children}
     </AuthContext.Provider>
   );

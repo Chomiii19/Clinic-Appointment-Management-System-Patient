@@ -128,7 +128,7 @@ export default function Login() {
 
       // fallback to role-based redirect
       if (response.data.user.role === "user") {
-        navigate(`/users/${response.data.user._id}/appointments`, {
+        navigate(`/users/${response.data.user.id}/appointments`, {
           replace: true,
         });
       } else if (response.data.user.role === "admin") {
