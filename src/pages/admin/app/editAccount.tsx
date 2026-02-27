@@ -264,7 +264,9 @@ function EditAccount() {
             setOpenSidebar={setOpenSidebar}
           />
         )}
-        <div className="w-full h-screen flex flex-col gap-4 lg:ml-58 p-5 overflow-hidden">
+        <div
+          className={`w-full h-screen flex flex-col gap-4 p-5 overflow-y-auto ${currentUser?.role === "admin" && "lg:ml-58"}`}
+        >
           <div className="flex items-center gap-1 w-full">
             <Menu
               onClick={() => setOpenSidebar(true)}
@@ -294,7 +296,9 @@ function EditAccount() {
             setOpenSidebar={setOpenSidebar}
           />
         )}
-        <div className="w-full h-screen flex flex-col gap-4 lg:ml-58 p-5 overflow-hidden">
+        <div
+          className={`w-full h-screen flex flex-col gap-4 p-5 overflow-y-auto ${currentUser?.role === "admin" && "lg:ml-58"}`}
+        >
           <div className="flex items-center gap-1 w-full">
             <Menu
               onClick={() => setOpenSidebar(true)}
@@ -323,7 +327,9 @@ function EditAccount() {
         />
       )}
 
-      <div className="w-full h-screen flex flex-col gap-4 lg:ml-58 p-5 overflow-y-auto">
+      <div
+        className={`w-full h-screen flex flex-col gap-4 p-5 overflow-y-auto ${currentUser?.role === "admin" && "lg:ml-58"}`}
+      >
         <div className="flex items-center gap-1 w-full">
           <Menu
             onClick={() => setOpenSidebar(true)}
