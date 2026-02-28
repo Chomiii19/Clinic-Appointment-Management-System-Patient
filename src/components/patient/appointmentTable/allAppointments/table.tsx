@@ -1,4 +1,4 @@
-import { ArrowUpRight, ChevronsUpDown, Wand } from "lucide-react";
+import { ChevronsUpDown, Eye, Pen, Wand, X } from "lucide-react";
 import { useState, type JSX } from "react";
 import { CustomCheckbox } from "../../../Checkbox";
 import { tableHeaders } from "./headers/appointments";
@@ -8,7 +8,7 @@ import { serviceColors, statusColors } from "../data";
 import { BACKEND_DOMAIN } from "../../../../configs/config";
 import axios from "axios";
 import type { IAppointment, IService } from "../../../../@types/interface";
-import { truncateFilename } from "../../../../utils/truncate";
+import { useNavigate } from "react-router-dom";
 
 export type Options = {
   value: string;
@@ -46,6 +46,7 @@ function Table({
   onEditClick: (service: IAppointment) => void;
 }) {
   const [selectAll, setSelectAll] = useState(false);
+  const navigate = useNavigate();
   const [selectedRows, setSelectedRows] = useState<Record<string, boolean>>({});
 
   const handleAction = async (id: string) => {
@@ -168,7 +169,6 @@ function Table({
                             </p>
                           </div>
                         </td>
-                        <td className="py-2 px-5">{appt.email}</td>
                         <td className="py-2 px-5">
                           <span
                             className={`px-2 py-0.5 rounded-sm text-white text-xs font-bold ${
@@ -223,41 +223,32 @@ function Table({
                             })}
                           </div>
                         </td>
-                        <td className="py-2 px-5 whitespace-nowrap">
-                          {appt?.medicalRecord?.fileUrl ? (
-                            <div className="flex items-center gap-1">
-                              <a
-                                href={appt?.medicalRecord?.fileUrl ?? "/"}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center px-2 border border-green-500 text-green-500 bg-green-200/20 rounded-md w-fit"
-                              >
-                                {truncateFilename(
-                                  appt?.medicalRecord?.filename ?? "",
-                                )}
-                                <ArrowUpRight className="w-4" />
-                              </a>
-                            </div>
-                          ) : (
-                            "none"
-                          )}
-                        </td>
                         <td className="px-5">
                           <div className="flex items-center gap-2 text-sm">
+                            <button
+                              title="View"
+                              onClick={() =>
+                                navigate(`/appointments/${appt._id}`)
+                              }
+                              className="text-zinc-400 hover:text-zinc-500 duration-150 ease-in-out transition-colors cursor-pointer"
+                            >
+                              <Eye className="w-6" />
+                            </button>
+
                             {["Pending"].includes(appt.status) && (
                               <button
                                 onClick={() => onEditClick(appt)}
-                                className="bg-green-500 text-zinc-100 font-bold rounded-sm px-2 py-0.5 cursor-pointer"
+                                className="text-zinc-400 hover:text-zinc-500 duration-150 ease-in-out transition-colors cursor-pointer"
                               >
-                                Edit
+                                <Pen className="w-5" />
                               </button>
                             )}
                             {["Approved", "Pending"].includes(appt.status) && (
                               <button
                                 onClick={() => handleAction(appt._id)}
-                                className="bg-red-500 text-zinc-100 font-bold rounded-sm px-2 py-0.5 cursor-pointer"
+                                className="text-zinc-400 hover:text-zinc-500 duration-150 ease-in-out transition-colors cursor-pointer"
                               >
-                                Cancel
+                                <X className="w-5" />
                               </button>
                             )}
                           </div>

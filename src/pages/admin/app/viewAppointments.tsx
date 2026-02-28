@@ -32,6 +32,7 @@ import {
 import Sidebar from "../../../components/Sidebar";
 import Header from "../../../components/Header";
 import { Menu } from "lucide-react";
+import { useAuth } from "../../../hooks/useAuth";
 
 function ViewAppointment() {
   const { id } = useParams<{ id: string }>();
@@ -47,6 +48,7 @@ function ViewAppointment() {
   const [uploadError, setUploadError] = useState<string>("");
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { currentUser } = useAuth();
   const [servicePrices, setServicePrices] = useState<{ [key: string]: number }>(
     {},
   );
@@ -315,12 +317,16 @@ function ViewAppointment() {
   if (loading) {
     return (
       <main className="bg-off-white dark:bg-off-black dark:text-zinc-50 font-manrope h-screen w-full flex gap-3 overflow-hidden">
-        <Sidebar
-          page="appointments"
-          openSidebar={openSidebar}
-          setOpenSidebar={setOpenSidebar}
-        />
-        <div className="w-full h-screen flex flex-col gap-4 lg:ml-58 p-5 overflow-hidden">
+        {currentUser?.role === "admin" && (
+          <Sidebar
+            page="patients"
+            openSidebar={openSidebar}
+            setOpenSidebar={setOpenSidebar}
+          />
+        )}
+        <div
+          className={`w-full h-screen flex flex-col gap-4 p-5 overflow-y-auto ${currentUser?.role === "admin" && "lg:ml-58"}`}
+        >
           <div className="flex items-center gap-1 w-full">
             <Menu
               onClick={() => setOpenSidebar(true)}
@@ -341,11 +347,13 @@ function ViewAppointment() {
   if (!appointment) {
     return (
       <main className="bg-off-white dark:bg-off-black dark:text-zinc-50 font-manrope h-screen w-full flex gap-3 overflow-hidden">
-        <Sidebar
-          page="appointments"
-          openSidebar={openSidebar}
-          setOpenSidebar={setOpenSidebar}
-        />
+        {currentUser?.role === "admin" && (
+          <Sidebar
+            page="patients"
+            openSidebar={openSidebar}
+            setOpenSidebar={setOpenSidebar}
+          />
+        )}
         <div className="w-full h-screen flex flex-col gap-4 lg:ml-58 p-5 overflow-hidden">
           <div className="flex items-center gap-1 w-full">
             <Menu
@@ -366,13 +374,17 @@ function ViewAppointment() {
 
   return (
     <main className="bg-off-white dark:bg-off-black dark:text-zinc-50 font-manrope h-screen w-full flex gap-3 overflow-hidden">
-      <Sidebar
-        page="appointments"
-        openSidebar={openSidebar}
-        setOpenSidebar={setOpenSidebar}
-      />
+      {currentUser?.role === "admin" && (
+        <Sidebar
+          page="patients"
+          openSidebar={openSidebar}
+          setOpenSidebar={setOpenSidebar}
+        />
+      )}
 
-      <div className="w-full h-screen flex flex-col gap-4 lg:ml-58 p-5 overflow-y-auto">
+      <div
+        className={`w-full h-screen flex flex-col gap-4 p-5 overflow-y-auto ${currentUser?.role === "admin" && "lg:ml-58"}`}
+      >
         <div className="flex items-center gap-1 w-full">
           <Menu
             onClick={() => setOpenSidebar(true)}
