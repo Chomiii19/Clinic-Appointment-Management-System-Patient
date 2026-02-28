@@ -11,6 +11,7 @@ import { statusOption } from "../data";
 import axios from "axios";
 import { BACKEND_DOMAIN } from "../../../../configs/config";
 import { Link } from "react-router-dom";
+import { useAuth } from "../../../../hooks/useAuth";
 
 function Filter({
   tabs,
@@ -34,6 +35,7 @@ function Filter({
   setOpenAddModal: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
   const { darkMode } = useDarkMode();
+  const { currentUser } = useAuth();
   const [serviceOptions, setServiceOptions] = useState<Options[]>([]);
   const [doctorOptions, setDoctorOptions] = useState<Options[]>([]);
 
@@ -122,8 +124,12 @@ function Filter({
         <div className="flex items-center gap-1 lg:gap-1.5 text-zinc-600 dark:text-zinc-400">
           {tabs.map((tab, i) => (
             <Link
-              to={`/appointments/${tab === "All" ? "" : tab.toLowerCase()}`}
               key={i}
+              to={
+                tab === "All"
+                  ? `/users/${currentUser?._id}/appointments`
+                  : `/users/${currentUser?._id}/appointments/today`
+              }
               className={`px-2 lg:px-3 py-0.5 hover:text-zinc-800 dark:hover:text-zinc-100 cursor-pointer rounded-sm ${
                 tab === currentTab &&
                 "bg-system-white dark:bg-system-black text-zinc-950 dark:text-zinc-50 shadow-sm"

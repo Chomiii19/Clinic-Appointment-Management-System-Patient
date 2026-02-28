@@ -192,7 +192,7 @@ function Today() {
         </div>
       )}
 
-      <div className="lg:w-[80vw] h-screen flex flex-col gap-4 p-5 overflow-hidden">
+      <div className="lg:w-full h-screen flex flex-col gap-4 p-5 overflow-hidden">
         <div className="flex items-center gap-1 w-full">
           <Header headline="Appointments" />
         </div>

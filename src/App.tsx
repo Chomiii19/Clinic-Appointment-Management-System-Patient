@@ -22,6 +22,7 @@ import ManageServices from "./pages/admin/settings/manageServices";
 import PolictyTerms from "./pages/admin/settings/policyTerms";
 import ViewAppointment from "./pages/admin/app/viewAppointments";
 import { AuthProvider } from "./contexts/AuthContext";
+import ManagePrices from "./pages/admin/settings/ManagePrices";
 
 function App() {
   return (
@@ -52,6 +53,7 @@ function App() {
           <Route path="/schedules" element={<ManageSchedules />} />
           <Route path="/schedules/today" element={<ManageTodaySchedules />} />
           <Route path="/services" element={<ManageServices />} />
+          <Route path="/prices" element={<ManagePrices />} />
 
           {/* Both */}
           <Route path="/users/:id" element={<ViewAccount />} />

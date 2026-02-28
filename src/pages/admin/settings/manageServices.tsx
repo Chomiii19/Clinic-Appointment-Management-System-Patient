@@ -12,9 +12,9 @@ import type { IService } from "../../../@types/interface";
 import Filter from "../../../components/admin/serviceTable/filter";
 import type { FiltersState } from "../../../@types/types";
 
+// price field removed — now lives in ManagePrices
 interface ServiceFormData {
   name: string;
-  price: number;
   status: string;
 }
 
@@ -37,7 +37,6 @@ function ManageServices() {
   const [perPage, setPerPage] = useState(0);
   const [formState, setFormState] = useState<ServiceFormData>({
     name: "",
-    price: 0,
     status: "",
   });
 
@@ -45,7 +44,6 @@ function ManageServices() {
   const [openEditModal, setOpenEditModal] = useState(false);
   const [editFormState, setEditFormState] = useState<ServiceFormData>({
     name: "",
-    price: 0,
     status: "",
   });
 
@@ -57,20 +55,16 @@ function ManageServices() {
         `${BACKEND_DOMAIN}/api/v1/services/${id}`,
         {
           name: formData.name,
-          price: formData.price,
           status: formData.status,
         },
         { withCredentials: true },
       );
-      setLoading(true);
-
       setOpenEditModal(false);
-      setEditFormState({ name: "", price: 0, status: "" });
+      setEditFormState({ name: "", status: "" });
       setCurrentPage(1);
     } catch (err) {
       console.error("Service update failed:", err);
     } finally {
-      setLoading(false);
       setRefresh((prev) => prev + 1);
     }
   };
@@ -81,20 +75,12 @@ function ManageServices() {
         `${BACKEND_DOMAIN}/api/v1/services/add`,
         {
           name: formData.name,
-          price: formData.price,
           status: formData.status,
         },
         { withCredentials: true },
       );
-      setLoading(true);
       setOpenAddModal(false);
-
-      setFormState({
-        name: "",
-        price: 0,
-        status: "",
-      });
-
+      setFormState({ name: "", status: "" });
       setCurrentPage(1);
       setFilters({});
       setSearch("");
@@ -121,14 +107,12 @@ function ManageServices() {
           `${BACKEND_DOMAIN}/api/v1/services?${params.toString()}`,
           { withCredentials: true },
         );
-        setLoading(false);
         setData(response.data.data);
         setTotalPages(response.data.totalPages);
         setTotalItems(response.data.total);
         setPerPage(response.data.limit);
       } catch (error) {
-        setLoading(false);
-        console.error("Failed to fetch appointments", error);
+        console.error("Failed to fetch services", error);
       } finally {
         setLoading(false);
       }
@@ -208,7 +192,6 @@ function ManageServices() {
             onEditClick={(service) => {
               setEditFormState({
                 name: service.name,
-                price: service.price,
                 status: service.status,
               });
               setOpenEditModal(true);
@@ -239,7 +222,7 @@ function AddService({
         e.preventDefault();
         handleAddAdmin(formState);
       }}
-      className="absolute  bg-system-white dark:bg-system-black shadow-xl lg:w-[500px] h-auto rounded-2xl mx-5 lg:mx-0 md:max-h-[670px] overflow-auto no-scrollbar"
+      className="absolute bg-system-white dark:bg-system-black shadow-xl lg:w-[500px] h-auto rounded-2xl mx-5 lg:mx-0 md:max-h-[670px] overflow-auto no-scrollbar"
     >
       <header className="p-5 pb-2 border-b border-zinc-300 dark:border-zinc-700">
         <h1 className="font-bold text-lg">Add New Service</h1>
@@ -266,26 +249,7 @@ function AddService({
             className="border border-zinc-300 dark:border-zinc-700 outline-none rounded-md px-2 py-0.5 w-full"
           />
         </div>
-        <div className="flex flex-col gap-1 w-full">
-          <label htmlFor="price">
-            Price <span className="text-red-500">*</span>
-          </label>
-          <input
-            required
-            type="number"
-            name="price"
-            id="price"
-            value={formState.price}
-            onChange={(e) =>
-              setFormState((prev) => ({
-                ...prev,
-                price: Number(e.target.value),
-              }))
-            }
-            placeholder="e.g. 100"
-            className="border border-zinc-300 dark:border-zinc-700 outline-none rounded-md px-2 py-0.5 w-full"
-          />
-        </div>
+
         <div className="flex flex-col gap-1 w-full">
           <label htmlFor="status">
             Status <span className="text-red-500">*</span>
@@ -312,11 +276,7 @@ function AddService({
           <button
             onClick={() => {
               setOpenAddModal(false);
-              setFormState({
-                name: "",
-                price: 0,
-                status: "",
-              });
+              setFormState({ name: "", status: "" });
             }}
             type="button"
             className="cursor-pointer"
@@ -376,23 +336,7 @@ function ServiceModal({
             className="border border-zinc-300 dark:border-zinc-700 outline-none rounded-md px-2 py-0.5 w-full"
           />
         </div>
-        <div className="flex flex-col gap-1 w-full">
-          <label>
-            Price <span className="text-red-500">*</span>
-          </label>
-          <input
-            required
-            type="number"
-            value={formState.price}
-            onChange={(e) =>
-              setFormState((prev) => ({
-                ...prev,
-                price: Number(e.target.value),
-              }))
-            }
-            className="border border-zinc-300 dark:border-zinc-700 outline-none rounded-md px-2 py-0.5 w-full"
-          />
-        </div>
+
         <div className="flex flex-col gap-1 w-full">
           <label>
             Status <span className="text-red-500">*</span>

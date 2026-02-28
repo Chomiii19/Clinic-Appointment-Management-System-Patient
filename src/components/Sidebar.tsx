@@ -217,6 +217,16 @@ function Sidebar({
                         Manage Services
                       </Link>
                       <Link
+                        to="/prices"
+                        className={`hover:text-zinc-950 dark:hover:text-zinc-50 p-2 rounded-lg transition-colors duration-150 ${
+                          page === "managePrices"
+                            ? "text-zinc-950 dark:text-zinc-50 bg-system-white dark:bg-system-black shadow-md"
+                            : ""
+                        }`}
+                      >
+                        Manage Prices
+                      </Link>
+                      <Link
                         to="/policies-and-terms"
                         className={`hover:text-zinc-950 dark:hover:text-zinc-50 p-2 rounded-lg transition-colors duration-150 ${
                           page === "policyTerms"
