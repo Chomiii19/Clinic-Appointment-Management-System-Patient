@@ -7,7 +7,7 @@ import Pagination from "../pagination";
 import { serviceColors, statusColors } from "../data";
 import { BACKEND_DOMAIN } from "../../../../configs/config";
 import axios from "axios";
-import type { IAppointment } from "../../../../@types/interface";
+import type { IAppointment, IService } from "../../../../@types/interface";
 import { truncateFilename } from "../../../../utils/truncate";
 
 export type Options = {
@@ -78,6 +78,16 @@ function Table({
   };
 
   const onPageChange = (page: number) => setCurrentPage(page);
+
+  const getServiceName = (service: string | IService): string => {
+    return typeof service === "string" ? service : service.name;
+  };
+
+  const normalizeMedicalDepartment = (
+    dept: string | IService | (string | IService)[],
+  ): (string | IService)[] => {
+    return Array.isArray(dept) ? dept : [dept];
+  };
 
   return (
     <div className="rounded-xl border border-zinc-300 dark:border-zinc-700 mt-3 bg-system-white dark:bg-system-black flex flex-col max-h-[80vh] overflow-hidden">
@@ -174,7 +184,7 @@ function Table({
                           {dayjs(appt.schedule).format("MM/DD/YY, h:mm A")}
                         </td>
                         <td className="py-2 px-5 text-zinc-950 dark:text-zinc-50 font-medium">
-                          {appt.doctorId?.name ? (
+                          {appt.doctorId?.firstname ? (
                             <div className="flex items-center gap-2">
                               <img
                                 src="/assets/images/profile-doctor.jpg"
@@ -182,7 +192,9 @@ function Table({
                                 className="w-7 h-7 rounded-full"
                               />
                               <p className="w-fit whitespace-nowrap">
-                                {appt.doctorId?.name}
+                                {appt.doctorId?.firstname}{" "}
+                                {appt.doctorId?.middlename}{" "}
+                                {appt.doctorId?.surname}
                               </p>
                             </div>
                           ) : (
@@ -192,29 +204,23 @@ function Table({
                           )}
                         </td>
                         <td className="py-2 px-5 whitespace-nowrap">
-                          <div className="flex gap-2 flex-nowrap">
-                            {Array.isArray(appt.medicalDepartment) ? (
-                              appt.medicalDepartment.map((svc, idx) => (
+                          <div className="flex flex-col gap-2 items-start">
+                            {normalizeMedicalDepartment(
+                              appt.medicalDepartment,
+                            ).map((svc, idx) => {
+                              const serviceName = getServiceName(svc);
+                              return (
                                 <span
                                   key={idx}
-                                  className={`px-3 py-1 rounded-full text-xs font-medium ${
-                                    serviceColors[svc] ||
+                                  className={`px-3 py-1 rounded-full text-xs font-medium w-auto ${
+                                    serviceColors[serviceName] ||
                                     "bg-gray-50 text-gray-700 border border-gray-200"
                                   }`}
                                 >
-                                  {svc}
+                                  {serviceName}
                                 </span>
-                              ))
-                            ) : (
-                              <span
-                                className={`px-3 py-1 rounded-full text-xs font-medium ${
-                                  serviceColors[appt.medicalDepartment] ||
-                                  "bg-gray-50 text-gray-700 border border-gray-200"
-                                }`}
-                              >
-                                {appt.medicalDepartment}
-                              </span>
-                            )}
+                              );
+                            })}
                           </div>
                         </td>
                         <td className="py-2 px-5 whitespace-nowrap">

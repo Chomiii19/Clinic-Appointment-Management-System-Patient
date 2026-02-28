@@ -300,7 +300,7 @@ function Table({
                           </div>
                         </td>
                         <td className="py-2 px-5 whitespace-nowrap">
-                          <div className="flex gap-2 flex-nowrap">
+                          <div className="flex flex-col gap-2 items-start">
                             {normalizeMedicalDepartment(
                               appt.medicalDepartment,
                             ).map((svc, idx) => {
@@ -308,7 +308,7 @@ function Table({
                               return (
                                 <span
                                   key={idx}
-                                  className={`px-3 py-1 rounded-full text-xs font-medium ${
+                                  className={`px-3 py-1 rounded-full text-xs font-medium w-auto ${
                                     serviceColors[serviceName] ||
                                     "bg-gray-50 text-gray-700 border border-gray-200"
                                   }`}
