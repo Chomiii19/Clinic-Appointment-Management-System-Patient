@@ -23,6 +23,7 @@ import PolictyTerms from "./pages/admin/settings/policyTerms";
 import ViewAppointment from "./pages/admin/app/viewAppointments";
 import { AuthProvider } from "./contexts/AuthContext";
 import ManagePrices from "./pages/admin/settings/ManagePrices";
+import Records from "./pages/admin/app/records";
 
 function App() {
   return (
@@ -41,6 +42,7 @@ function App() {
           {/* Admin */}
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/appointments" element={<Appointments />} />
+          <Route path="/records" element={<Records />} />
           <Route
             path="/appointments/archive"
             element={<ArchiveAppointments />}

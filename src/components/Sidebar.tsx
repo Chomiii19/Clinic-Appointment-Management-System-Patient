@@ -145,6 +145,17 @@ function Sidebar({
                 <p>Appointments</p>
               </Link>
               <Link
+                to="/records"
+                className={`w-full flex items-center gap-4 cursor-pointer rounded-lg p-2 hover:text-zinc-950 dark:hover:text-zinc-50 transition-colors duration-150 ${
+                  page === "records"
+                    ? "text-zinc-950 dark:text-zinc-50 bg-system-white dark:bg-system-black shadow-md"
+                    : ""
+                }`}
+              >
+                <ClipboardClock />
+                <p>Records</p>
+              </Link>
+              <Link
                 to="/patients"
                 className={`w-full flex items-center justify-between cursor-pointer rounded-lg p-2 hover:text-zinc-950 dark:hover:text-zinc-50 transition-colors duration-150 ${
                   page === "patients"
