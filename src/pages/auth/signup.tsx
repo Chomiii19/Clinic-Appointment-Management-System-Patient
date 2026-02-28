@@ -143,7 +143,9 @@ export default function Signup() {
 
       console.log("Signup success:", response.data);
 
-      navigate("/appointments");
+      navigate(`/users/${response.data.user.id}/appointments`, {
+        replace: true,
+      });
     } catch (e) {
       console.log(e);
       if (axios.isAxiosError(e)) {
