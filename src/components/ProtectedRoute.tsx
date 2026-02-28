@@ -11,7 +11,7 @@ interface Props {
 }
 
 export default function ProtectedRoute({ allowedRoles, children }: Props) {
-  const { user, loading } = useAuth();
+  const { currentUser, loading } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -19,24 +19,24 @@ export default function ProtectedRoute({ allowedRoles, children }: Props) {
   useEffect(() => {
     if (loading) return;
 
-    if (user && !allowedRoles.includes(user.role as Role)) {
+    if (currentUser && !allowedRoles.includes(currentUser.role as Role)) {
       if (window.history.length > 1) {
         navigate(-1);
       } else {
         navigate("/");
       }
     }
-  }, [user, loading, allowedRoles, navigate]);
+  }, [currentUser, loading, allowedRoles, navigate]);
 
   if (loading) return null;
 
   // Not logged in → login (remember previous page)
-  if (!user) {
+  if (!currentUser) {
     return <Navigate to="/login" replace state={{ from: location }} />;
   }
 
   // Prevent flash while redirecting
-  if (user && !allowedRoles.includes(user.role as Role)) {
+  if (currentUser && !allowedRoles.includes(currentUser.role as Role)) {
     return null;
   }
 

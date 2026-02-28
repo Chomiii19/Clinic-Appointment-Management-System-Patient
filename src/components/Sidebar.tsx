@@ -8,6 +8,7 @@ import {
   Settings,
   Sun,
   User,
+  FileUser,
 } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
@@ -152,7 +153,7 @@ function Sidebar({
                     : ""
                 }`}
               >
-                <ClipboardClock />
+                <FileUser />
                 <p>Records</p>
               </Link>
               <Link
