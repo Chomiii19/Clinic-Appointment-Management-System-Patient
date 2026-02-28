@@ -69,7 +69,7 @@ function Appointments() {
         params.append("page", String(currentPage));
 
         const response = await axios.get(
-          `${BACKEND_DOMAIN}/api/v1/appointments/all?${params.toString()}`,
+          `${BACKEND_DOMAIN}/api/v1/appointments/with-medical-record?${params.toString()}`,
           { withCredentials: true },
         );
         setLoading(false);
