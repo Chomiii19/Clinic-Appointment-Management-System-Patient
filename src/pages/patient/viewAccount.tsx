@@ -316,7 +316,7 @@ function ViewAccount() {
                     </div>
                   </div>
 
-                  {user.maritalStatus && (
+                  {user.maritalStatus && currentUser?.role === "user" && (
                     <div>
                       <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-1">
                         Marital Status

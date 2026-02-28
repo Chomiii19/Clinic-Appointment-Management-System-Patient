@@ -516,26 +516,28 @@ function EditAccount() {
               </div>
 
               {/* Marital Status */}
-              <div className="flex flex-col gap-1">
-                <label className="text-sm text-zinc-600 dark:text-zinc-400">
-                  Marital Status
-                </label>
-                <select
-                  name="maritalStatus"
-                  value={form.maritalStatus}
-                  onChange={handleChange}
-                  className="border border-zinc-300 dark:border-zinc-700 outline-none rounded-lg px-3 py-2 text-sm bg-transparent text-zinc-900 dark:text-zinc-50 focus:border-blue-500 dark:focus:border-blue-600 transition-colors duration-150 cursor-pointer"
-                >
-                  <option value="" disabled>
-                    Select marital status
-                  </option>
-                  <option value="Single">Single</option>
-                  <option value="Married">Married</option>
-                  <option value="Divorced">Divorced</option>
-                  <option value="Widowed">Widowed</option>
-                  <option value="Separated">Separated</option>
-                </select>
-              </div>
+              {currentUser?.role === "user" && (
+                <div className="flex flex-col gap-1">
+                  <label className="text-sm text-zinc-600 dark:text-zinc-400">
+                    Marital Status
+                  </label>
+                  <select
+                    name="maritalStatus"
+                    value={form.maritalStatus}
+                    onChange={handleChange}
+                    className="border border-zinc-300 dark:border-zinc-700 outline-none rounded-lg px-3 py-2 text-sm bg-transparent text-zinc-900 dark:text-zinc-50 focus:border-blue-500 dark:focus:border-blue-600 transition-colors duration-150 cursor-pointer"
+                  >
+                    <option value="" disabled>
+                      Select marital status
+                    </option>
+                    <option value="Single">Single</option>
+                    <option value="Married">Married</option>
+                    <option value="Divorced">Divorced</option>
+                    <option value="Widowed">Widowed</option>
+                    <option value="Separated">Separated</option>
+                  </select>
+                </div>
+              )}
             </div>
           </div>
 

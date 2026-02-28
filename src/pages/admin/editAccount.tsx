@@ -4,6 +4,7 @@ import Header from "../../components/Header";
 import { useNavigate, useParams } from "react-router-dom";
 import axios, { AxiosError } from "axios";
 import { BACKEND_DOMAIN } from "../../configs/config";
+import { useAuth } from "../../hooks/useAuth";
 
 interface UpdateUserPayload {
   firstname: string;
@@ -20,6 +21,7 @@ interface UpdateUserPayload {
 function EditAccount() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { currentUser } = useAuth();
   const [address, setAddress] = useState("");
   const [email, setEmail] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -222,26 +224,28 @@ function EditAccount() {
                 <option value="female">Female</option>
               </select>
             </div>
-            <div className="flex flex-col gap-1 w-full">
-              <label htmlFor="maritalStatus">
-                Marital Status <span className="text-red-500">*</span>
-              </label>
-              <select
-                required
-                name="maritalStatus"
-                id="maritalStatus"
-                value={maritalStatus}
-                onChange={(e) => setMaritalStatus(e.target.value)}
-                className="border border-zinc-300 dark:border-zinc-700 outline-none rounded-md px-2 py-0.5 w-full"
-              >
-                <option value="" disabled>
-                  Select Marital
-                </option>
-                <option value="single">Single</option>
-                <option value="widowed">Widowed</option>
-                <option value="married">Married</option>
-              </select>
-            </div>
+            {currentUser?.role === "user" && (
+              <div className="flex flex-col gap-1 w-full">
+                <label htmlFor="maritalStatus">
+                  Marital Status <span className="text-red-500">*</span>
+                </label>
+                <select
+                  required
+                  name="maritalStatus"
+                  id="maritalStatus"
+                  value={maritalStatus}
+                  onChange={(e) => setMaritalStatus(e.target.value)}
+                  className="border border-zinc-300 dark:border-zinc-700 outline-none rounded-md px-2 py-0.5 w-full"
+                >
+                  <option value="" disabled>
+                    Select Marital
+                  </option>
+                  <option value="single">Single</option>
+                  <option value="widowed">Widowed</option>
+                  <option value="married">Married</option>
+                </select>
+              </div>
+            )}
           </div>
 
           <div className="flex flex-col gap-1 w-full">
