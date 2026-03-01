@@ -105,7 +105,7 @@ function TodayAppointments() {
           "Doctor Assigned"
         ] as SingleValue<Options> | null;
         if (doctorFilter?.value) {
-          params.append("doctorName", doctorFilter.value);
+          params.append("doctorName", doctorFilter.label ?? "");
         }
 
         if (search.trim()) params.append("search", search.trim());

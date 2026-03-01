@@ -120,8 +120,9 @@ function Home() {
         const doctorFilter = filters[
           "Doctor Assigned"
         ] as SingleValue<Options> | null;
-        if (doctorFilter?.value)
-          params.append("doctorName", doctorFilter.value);
+        if (doctorFilter?.value) {
+          params.append("doctorName", doctorFilter.label ?? "");
+        }
 
         if (search.trim()) params.append("search", search.trim());
         params.append("page", String(currentPage));
