@@ -1,3 +1,4 @@
+import Select from "react-select";
 import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import axios, { AxiosError } from "axios";
@@ -21,6 +22,7 @@ import {
   Trash2,
   File,
   X,
+  Pen,
 } from "lucide-react";
 import { BACKEND_DOMAIN } from "../../../configs/config";
 import type { IAppointment, IService } from "../../../@types/interface";
@@ -32,6 +34,11 @@ import Sidebar from "../../../components/Sidebar";
 import Header from "../../../components/Header";
 import { Menu } from "lucide-react";
 import { useAuth } from "../../../hooks/useAuth";
+
+interface DoctorFormData {
+  schedule: string;
+  medicalDepartment: string[];
+}
 
 function ViewAppointment() {
   const { id } = useParams<{ id: string }>();
@@ -53,6 +60,11 @@ function ViewAppointment() {
   const [servicePrices, setServicePrices] = useState<{ [key: string]: number }>(
     {},
   );
+  const [openEditModal, setOpenEditModal] = useState(false);
+  const [editFormState, setEditFormState] = useState<DoctorFormData>({
+    schedule: "",
+    medicalDepartment: [],
+  });
 
   useEffect(() => {
     fetchAppointment();
@@ -311,6 +323,25 @@ function ViewAppointment() {
 
   const medicalRecords = appointment?.medicalRecords ?? [];
 
+  const handleEditAppointment = async (formData: DoctorFormData) => {
+    if (!appointment) return;
+    try {
+      await axios.patch(
+        `${BACKEND_DOMAIN}/api/v1/appointments/${appointment._id}`,
+        {
+          schedule: formData.schedule,
+          medicalDepartment: formData.medicalDepartment,
+        },
+        { withCredentials: true },
+      );
+      setOpenEditModal(false);
+      setEditFormState({ schedule: "", medicalDepartment: [] });
+      await fetchAppointment();
+    } catch (error) {
+      console.error("Appointment update failed:", error);
+    }
+  };
+
   if (loading) {
     return (
       <main className="bg-off-white dark:bg-off-black dark:text-zinc-50 font-manrope h-screen w-full flex gap-3 overflow-hidden">
@@ -382,6 +413,20 @@ function ViewAppointment() {
       <div
         className={`w-full h-screen flex flex-col gap-4 p-5 overflow-y-auto ${currentUser?.role === "admin" && "lg:ml-58"}`}
       >
+        {openEditModal && (
+          <div
+            onClick={() => setOpenEditModal(false)}
+            className="fixed inset-0 z-60 flex justify-center items-center bg-black/15 dark:bg-black/25"
+          >
+            <ServiceModal
+              formState={editFormState}
+              setFormState={setEditFormState}
+              onSubmit={() => handleEditAppointment(editFormState)}
+              onClose={() => setOpenEditModal(false)}
+              title="Edit Appointment"
+            />
+          </div>
+        )}
         <div className="flex items-center gap-1 w-full">
           <Menu
             onClick={() => setOpenSidebar(true)}
@@ -401,53 +446,94 @@ function ViewAppointment() {
           </button>
 
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-2">
-              {appointment.status === "Pending" && (
-                <>
+            {currentUser?.role === "user" && (
+              <div className="flex items-center gap-2">
+                {["Pending"].includes(appointment.status) && (
                   <button
-                    onClick={() => handleAction("approve")}
-                    className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors duration-150"
+                    onClick={() => {
+                      setEditFormState({
+                        schedule: dayjs(appointment.schedule).format(
+                          "YYYY-MM-DDTHH:mm",
+                        ),
+                        medicalDepartment: Array.isArray(
+                          appointment.medicalDepartment,
+                        )
+                          ? appointment.medicalDepartment.map((s) =>
+                              typeof s === "string" ? s : s.name,
+                            )
+                          : [
+                              typeof appointment.medicalDepartment === "string"
+                                ? appointment.medicalDepartment
+                                : appointment.medicalDepartment.name,
+                            ],
+                      });
+                      setOpenEditModal(true);
+                    }}
+                    className="flex items-center gap-2 px-4 py-2 bg-zinc-800 text-white rounded-lg hover:bg-zinc-900 transition-colors duration-150"
                   >
-                    <span className="font-medium">Approve</span>
+                    <Pen className="w-5" /> Edit
                   </button>
+                )}
+                {["Approved", "Pending"].includes(appointment.status) && (
                   <button
-                    onClick={() => handleAction("decline")}
+                    onClick={() => handleAction("cancelled")}
                     className="flex items-center gap-2 px-4 py-2 bg-red-400 text-white rounded-lg hover:bg-red-500 transition-colors duration-150"
                   >
-                    <span className="font-medium">Decline</span>
+                    <span className="font-medium">Cancel</span>
                   </button>
-                </>
-              )}
+                )}
+              </div>
+            )}
 
-              {appointment.status === "Approved" && (
-                <>
-                  <button
-                    onClick={() => handleAction("completed")}
-                    className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors duration-150"
-                  >
-                    <span className="font-medium">Completed</span>
-                  </button>
-                  <button
-                    onClick={() => handleAction("noshow")}
-                    className="flex items-center gap-2 px-4 py-2 bg-red-400 text-white rounded-lg hover:bg-red-500 transition-colors duration-150"
-                  >
-                    <span className="font-medium">No Show</span>
-                  </button>
-                </>
-              )}
+            {currentUser?.role === "admin" && (
+              <div className="flex items-center gap-2">
+                {appointment.status === "Pending" && (
+                  <>
+                    <button
+                      onClick={() => handleAction("approve")}
+                      className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors duration-150"
+                    >
+                      <span className="font-medium">Approve</span>
+                    </button>
+                    <button
+                      onClick={() => handleAction("decline")}
+                      className="flex items-center gap-2 px-4 py-2 bg-red-400 text-white rounded-lg hover:bg-red-500 transition-colors duration-150"
+                    >
+                      <span className="font-medium">Decline</span>
+                    </button>
+                  </>
+                )}
 
-              {["Cancelled", "No Show", "Completed", "Declined"].includes(
-                appointment.status,
-              ) && (
-                <button
-                  onClick={handleArchive}
-                  className="flex items-center gap-2 px-4 py-2 bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-lg hover:bg-zinc-300 dark:hover:bg-zinc-700 transition-colors duration-150"
-                >
-                  <Archive className="w-4 h-4" />
-                  <span className="font-medium">Archive</span>
-                </button>
-              )}
-            </div>
+                {appointment.status === "Approved" && (
+                  <>
+                    <button
+                      onClick={() => handleAction("completed")}
+                      className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors duration-150"
+                    >
+                      <span className="font-medium">Completed</span>
+                    </button>
+                    <button
+                      onClick={() => handleAction("noshow")}
+                      className="flex items-center gap-2 px-4 py-2 bg-red-400 text-white rounded-lg hover:bg-red-500 transition-colors duration-150"
+                    >
+                      <span className="font-medium">No Show</span>
+                    </button>
+                  </>
+                )}
+
+                {["Cancelled", "No Show", "Completed", "Declined"].includes(
+                  appointment.status,
+                ) && (
+                  <button
+                    onClick={handleArchive}
+                    className="flex items-center gap-2 px-4 py-2 bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-lg hover:bg-zinc-300 dark:hover:bg-zinc-700 transition-colors duration-150"
+                  >
+                    <Archive className="w-4 h-4" />
+                    <span className="font-medium">Archive</span>
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
@@ -614,23 +700,25 @@ function ViewAppointment() {
                 </div>
 
                 {/* Upload trigger */}
-                <label
-                  htmlFor="medical-record-upload"
-                  className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-150 cursor-pointer text-sm font-medium"
-                >
-                  <Upload className="w-4 h-4" />
-                  <span>Add Files</span>
-                  <input
-                    id="medical-record-upload"
-                    ref={fileInputRef}
-                    type="file"
-                    onChange={handleFileChange}
-                    accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                    multiple
-                    className="hidden"
-                    disabled={uploading}
-                  />
-                </label>
+                {currentUser?.role === "admin" && (
+                  <label
+                    htmlFor="medical-record-upload"
+                    className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-150 cursor-pointer text-sm font-medium"
+                  >
+                    <Upload className="w-4 h-4" />
+                    <span>Add Files</span>
+                    <input
+                      id="medical-record-upload"
+                      ref={fileInputRef}
+                      type="file"
+                      onChange={handleFileChange}
+                      accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                      multiple
+                      className="hidden"
+                      disabled={uploading}
+                    />
+                  </label>
+                )}
               </div>
 
               {/* Status Messages */}
@@ -769,20 +857,22 @@ function ViewAppointment() {
                             <span>Download</span>
                           </a>
 
-                          <button
-                            onClick={() =>
-                              handleDeleteMedicalRecord(record._id)
-                            }
-                            disabled={deletingRecordId === record._id}
-                            className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                            title="Delete this record"
-                          >
-                            {deletingRecordId === record._id ? (
-                              <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
-                            ) : (
-                              <Trash2 className="w-4 h-4" />
-                            )}
-                          </button>
+                          {currentUser?.role === "admin" && (
+                            <button
+                              onClick={() =>
+                                handleDeleteMedicalRecord(record._id)
+                              }
+                              disabled={deletingRecordId === record._id}
+                              className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                              title="Delete this record"
+                            >
+                              {deletingRecordId === record._id ? (
+                                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                              ) : (
+                                <Trash2 className="w-4 h-4" />
+                              )}
+                            </button>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -965,6 +1055,89 @@ function ViewAppointment() {
         </div>
       </div>
     </main>
+  );
+}
+
+function ServiceModal({
+  formState,
+  setFormState,
+  onSubmit,
+  onClose,
+  title,
+}: {
+  formState: DoctorFormData;
+  setFormState: React.Dispatch<React.SetStateAction<DoctorFormData>>;
+  onSubmit: () => void;
+  onClose: () => void;
+  title: string;
+}) {
+  // compute serviceOptions on render
+  const serviceOptions = formState.medicalDepartment.map((dep) => ({
+    value: dep,
+    label: dep,
+  }));
+
+  const safeValue = serviceOptions; // same thing
+
+  return (
+    <form
+      onClick={(e) => e.stopPropagation()}
+      onSubmit={(e) => {
+        e.preventDefault();
+        onSubmit();
+      }}
+      className="absolute z-70 bg-system-white dark:bg-system-black shadow-xl lg:w-[500px] h-auto rounded-2xl mx-5 lg:mx-0 md:max-h-[670px] no-scrollbar"
+    >
+      <header className="p-5 pb-2 border-b border-zinc-300 dark:border-zinc-700">
+        <h1 className="font-bold text-lg">{title}</h1>
+      </header>
+
+      <section className="p-5 pt-2 flex flex-col gap-3.5 text-sm">
+        <div className="flex flex-col gap-1 w-full">
+          <label>
+            Services <span className="text-red-500">*</span>
+          </label>
+          <Select<{ value: string; label: string }, true>
+            isMulti
+            options={serviceOptions}
+            value={safeValue}
+            onChange={(selected) =>
+              setFormState((prev) => ({
+                ...prev,
+                medicalDepartment: selected.map((s) => s.value),
+              }))
+            }
+          />
+        </div>
+
+        <div className="flex flex-col gap-1 w-full">
+          <label>
+            Schedule <span className="text-red-500">*</span>
+          </label>
+          <input
+            required
+            type="datetime-local"
+            value={formState.schedule}
+            onChange={(e) =>
+              setFormState((prev) => ({ ...prev, schedule: e.target.value }))
+            }
+            className="border border-zinc-300 dark:border-zinc-700 outline-none rounded-md px-2 py-0.5 w-full"
+          />
+        </div>
+
+        <div className="flex items-center w-full justify-end gap-3">
+          <button type="button" onClick={onClose} className="cursor-pointer">
+            Cancel
+          </button>
+          <button
+            type="submit"
+            className="bg-zinc-900 text-zinc-100 px-3 py-1 rounded-full font-bold cursor-pointer"
+          >
+            Save
+          </button>
+        </div>
+      </section>
+    </form>
   );
 }
 
