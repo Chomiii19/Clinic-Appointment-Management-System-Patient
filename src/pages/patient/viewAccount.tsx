@@ -543,11 +543,18 @@ function ViewAccount() {
                             </div>
                           </td>
                           <td className="px-6 py-4">
-                            <p className="text-sm text-zinc-900 dark:text-zinc-50">
-                              {appointment.doctorId
-                                ? `${appointment.doctorId.firstname} ${appointment.doctorId.middlename} ${appointment.doctorId.surname}`
-                                : "Not assigned"}
-                            </p>
+                            {Array.isArray(appointment.doctorId) &&
+                            appointment.doctorId.length > 0 ? (
+                              <p className="text-sm text-zinc-900 dark:text-zinc-50">
+                                {appointment.doctorId[0].firstname}{" "}
+                                {appointment.doctorId[0].middlename}{" "}
+                                {appointment.doctorId[0].surname}
+                              </p>
+                            ) : (
+                              <p className="text-sm text-zinc-400 dark:text-zinc-500">
+                                Not assigned
+                              </p>
+                            )}
                           </td>
                           <td className="px-6 py-4">
                             <span
