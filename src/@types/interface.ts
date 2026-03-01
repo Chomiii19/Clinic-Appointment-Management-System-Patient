@@ -6,11 +6,15 @@ export interface IAppointment {
   doctorId: IDoctor;
   patientName: string;
   medicalDepartment: string | IService | (string | IService)[];
-  medicalRecord: {
+  medicalRecords: {
     _id: string;
+    appointmentId: string;
     filename: string;
+    driveId: string;
+    originalName: string;
     fileUrl: string;
-  };
+    uploadedAt: Date;
+  }[];
   schedule: Date;
   email: string;
   phoneNumber: string;

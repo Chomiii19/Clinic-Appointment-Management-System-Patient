@@ -16,7 +16,6 @@ import {
   XCircle,
   AlertCircle,
   Download,
-  Edit,
   Archive,
   Upload,
   Trash2,
@@ -47,6 +46,8 @@ function ViewAppointment() {
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string>("");
   const [uploadSuccess, setUploadSuccess] = useState(false);
+  const [deletingRecordId, setDeletingRecordId] = useState<string | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { currentUser } = useAuth();
   const [servicePrices, setServicePrices] = useState<{ [key: string]: number }>(
@@ -57,7 +58,6 @@ function ViewAppointment() {
     fetchAppointment();
   }, [id]);
 
-  // Fetch service prices when appointment data is loaded
   useEffect(() => {
     if (appointment?.medicalDepartment) {
       fetchServicePrices();
@@ -83,23 +83,19 @@ function ViewAppointment() {
     if (!appointment?.medicalDepartment) return;
 
     try {
-      // Extract service names from medicalDepartment
       const departments = Array.isArray(appointment.medicalDepartment)
         ? appointment.medicalDepartment
         : [appointment.medicalDepartment];
 
       const serviceNames = departments
         .map((service) => {
-          if (typeof service === "string") {
-            return service;
-          } else if (typeof service === "object" && service !== null) {
+          if (typeof service === "string") return service;
+          if (typeof service === "object" && service !== null)
             return (service as IService).name;
-          }
           return "";
         })
         .filter(Boolean);
 
-      // Fetch prices from the API
       const response = await axios.post(
         `${BACKEND_DOMAIN}/api/v1/services/prices`,
         { names: serviceNames },
@@ -108,11 +104,8 @@ function ViewAppointment() {
 
       if (response.data.status === "success") {
         setServicePrices(response.data.data);
-
-        // Log if any services were not found
-        if (response.data.notFound && response.data.notFound.length > 0) {
+        if (response.data.notFound?.length > 0)
           console.warn("Services not found:", response.data.notFound);
-        }
       }
     } catch (error) {
       console.error("Failed to fetch service prices", error);
@@ -127,18 +120,9 @@ function ViewAppointment() {
       : [appointment.medicalDepartment];
 
     return departments.reduce((sum, dept) => {
-      // If department is a string, use the price from servicePrices state
-      if (typeof dept === "string") {
-        const price = servicePrices[dept] || 0;
-        return sum + price;
-      }
-
-      // If department is an IService object with price
-      if (typeof dept === "object" && dept !== null) {
-        const service = dept as IService;
-        return sum + (service.price || 0);
-      }
-
+      if (typeof dept === "string") return sum + (servicePrices[dept] || 0);
+      if (typeof dept === "object" && dept !== null)
+        return sum + ((dept as IService).price || 0);
       return sum;
     }, 0);
   };
@@ -147,11 +131,7 @@ function ViewAppointment() {
 
   const handleArchive = async () => {
     if (!appointment) return;
-
-    const confirmed = confirm(
-      "Are you sure you want to archive this appointment?",
-    );
-    if (!confirmed) return;
+    if (!confirm("Are you sure you want to archive this appointment?")) return;
 
     try {
       await axios.patch(
@@ -165,13 +145,25 @@ function ViewAppointment() {
     }
   };
 
-  const handleFileUpload = async (
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    const file = event.target.files?.[0];
-    if (!file || !appointment) return;
+  const handleAction = async (action: string) => {
+    if (!appointment) return;
+    try {
+      await axios.patch(
+        `${BACKEND_DOMAIN}/api/v1/appointments/${appointment._id}/${action}`,
+        {},
+        { withCredentials: true },
+      );
+      await fetchAppointment();
+    } catch (error) {
+      console.error("Failed to update appointment status", error);
+    }
+  };
 
-    // Validate file type (PDFs, images, documents)
+  // --- File selection (staging) ---
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const incoming = Array.from(event.target.files || []);
+    if (!incoming.length) return;
+
     const allowedTypes = [
       "application/pdf",
       "image/jpeg",
@@ -180,28 +172,50 @@ function ViewAppointment() {
       "application/msword",
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     ];
+    const maxSize = 10 * 1024 * 1024;
 
-    if (!allowedTypes.includes(file.type)) {
+    const invalid = incoming.find(
+      (f) => !allowedTypes.includes(f.type) || f.size > maxSize,
+    );
+
+    if (invalid) {
       setUploadError(
-        "Invalid file type. Please upload PDF, Image, or Word document.",
+        !allowedTypes.includes(invalid.type)
+          ? `"${invalid.name}" has an invalid type. Allowed: PDF, Image, Word.`
+          : `"${invalid.name}" exceeds the 10MB size limit.`,
       );
       return;
     }
 
-    // Validate file size (max 10MB)
-    const maxSize = 10 * 1024 * 1024; // 10MB
-    if (file.size > maxSize) {
-      setUploadError("File size exceeds 10MB limit.");
-      return;
-    }
+    setUploadError("");
+    setSelectedFiles((prev) => {
+      // Deduplicate by name + size
+      const existing = new Set(prev.map((f) => `${f.name}-${f.size}`));
+      return [
+        ...prev,
+        ...incoming.filter((f) => !existing.has(`${f.name}-${f.size}`)),
+      ];
+    });
+
+    // Reset input so the same file can be re-selected if removed
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const removeSelectedFile = (index: number) => {
+    setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  // --- Upload staged files ---
+  const handleUpload = async () => {
+    if (!selectedFiles.length || !appointment) return;
 
     setUploadError("");
     setUploadSuccess(false);
     setUploading(true);
 
     const formData = new FormData();
-    formData.append("file", file);
     formData.append("appointmentId", appointment._id);
+    selectedFiles.forEach((file) => formData.append("files", file));
 
     try {
       await axios.post(
@@ -209,59 +223,52 @@ function ViewAppointment() {
         formData,
         {
           withCredentials: true,
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
+          headers: { "Content-Type": "multipart/form-data" },
         },
       );
 
       setUploadSuccess(true);
-      // Refresh appointment data to show new medical record
+      setSelectedFiles([]);
       await fetchAppointment();
 
-      // Reset file input
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
-
-      // Clear success message after 3 seconds
-      setTimeout(() => {
-        setUploadSuccess(false);
-      }, 3000);
+      setTimeout(() => setUploadSuccess(false), 3000);
     } catch (error) {
       if (axios.isAxiosError(error)) {
         const axiosError = error as AxiosError<{ message?: string }>;
         setUploadError(
           axiosError.response?.data?.message ||
-            "Failed to upload file. Please try again.",
+            "Failed to upload files. Please try again.",
         );
       } else {
-        setUploadError("Failed to upload file. Please try again.");
+        setUploadError("Failed to upload files. Please try again.");
       }
     } finally {
       setUploading(false);
     }
   };
 
-  const handleDeleteMedicalRecord = async () => {
-    if (!appointment?.medicalRecord) return;
+  // --- Delete a single record ---
+  const handleDeleteMedicalRecord = async (recordId: string) => {
+    if (!appointment) return;
+    if (
+      !confirm(
+        "Are you sure you want to delete this medical record? This action cannot be undone.",
+      )
+    )
+      return;
 
-    const confirmed = confirm(
-      "Are you sure you want to delete this medical record? This action cannot be undone.",
-    );
-    if (!confirmed) return;
-
+    setDeletingRecordId(recordId);
     try {
       await axios.delete(
-        `${BACKEND_DOMAIN}/api/v1/medical-records/${appointment.medicalRecord._id}/appointments/${appointment._id}`,
+        `${BACKEND_DOMAIN}/api/v1/medical-records/${recordId}/appointments/${appointment._id}`,
         { withCredentials: true },
       );
-
-      // Refresh appointment data
       await fetchAppointment();
     } catch (error) {
       console.error("Failed to delete medical record", error);
       alert("Failed to delete medical record. Please try again.");
+    } finally {
+      setDeletingRecordId(null);
     }
   };
 
@@ -282,37 +289,27 @@ function ViewAppointment() {
 
   const getFileIcon = (filename: string) => {
     const ext = filename.split(".").pop()?.toLowerCase();
-    if (ext === "pdf") {
+    if (ext === "pdf")
       return <FileText className="w-5 h-5 text-red-600 dark:text-red-400" />;
-    } else if (["jpg", "jpeg", "png", "gif"].includes(ext || "")) {
+    if (["jpg", "jpeg", "png", "gif"].includes(ext || ""))
       return <File className="w-5 h-5 text-blue-600 dark:text-blue-400" />;
-    }
     return <File className="w-5 h-5 text-zinc-600 dark:text-zinc-400" />;
   };
 
   const getServicePrice = (service: string | IService): number => {
-    // If service is a string, get price from servicePrices state
-    if (typeof service === "string") {
-      return servicePrices[service] || 0;
-    }
-
-    // If service is an IService object with price property
-    if (typeof service === "object" && service !== null) {
+    if (typeof service === "string") return servicePrices[service] || 0;
+    if (typeof service === "object" && service !== null)
       return service.price || 0;
-    }
-
     return 0;
   };
 
   const getServiceName = (service: string | IService): string => {
-    if (typeof service === "string") {
-      return service;
-    }
-    if (typeof service === "object" && service !== null) {
-      return service.name;
-    }
+    if (typeof service === "string") return service;
+    if (typeof service === "object" && service !== null) return service.name;
     return "";
   };
+
+  const medicalRecords = appointment?.medicalRecords ?? [];
 
   if (loading) {
     return (
@@ -376,7 +373,7 @@ function ViewAppointment() {
     <main className="bg-off-white dark:bg-off-black dark:text-zinc-50 font-manrope h-screen w-full flex gap-3 overflow-hidden">
       {currentUser?.role === "admin" && (
         <Sidebar
-          page="patients"
+          page="appointments"
           openSidebar={openSidebar}
           setOpenSidebar={setOpenSidebar}
         />
@@ -404,26 +401,53 @@ function ViewAppointment() {
           </button>
 
           <div className="flex items-center gap-2">
-            <button
-              disabled={appointment.status === "completed"}
-              onClick={() => navigate(`/appointments/${id}/edit`)}
-              className="flex items-center gap-2 px-4 py-2 bg-zinc-900 dark:bg-zinc-100 text-zinc-100 dark:text-zinc-900 rounded-lg hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors duration-150"
-            >
-              <Edit className="w-4 h-4" />
-              <span className="font-medium">Edit</span>
-            </button>
+            <div className="flex items-center gap-2">
+              {appointment.status === "Pending" && (
+                <>
+                  <button
+                    onClick={() => handleAction("approve")}
+                    className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors duration-150"
+                  >
+                    <span className="font-medium">Approve</span>
+                  </button>
+                  <button
+                    onClick={() => handleAction("decline")}
+                    className="flex items-center gap-2 px-4 py-2 bg-red-400 text-white rounded-lg hover:bg-red-500 transition-colors duration-150"
+                  >
+                    <span className="font-medium">Decline</span>
+                  </button>
+                </>
+              )}
 
-            {["Cancelled", "No Show", "Completed", "Declined"].includes(
-              appointment.status,
-            ) && (
-              <button
-                onClick={handleArchive}
-                className="flex items-center gap-2 px-4 py-2 bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-lg hover:bg-zinc-300 dark:hover:bg-zinc-700 transition-colors duration-150"
-              >
-                <Archive className="w-4 h-4" />
-                <span className="font-medium">Archive</span>
-              </button>
-            )}
+              {appointment.status === "Approved" && (
+                <>
+                  <button
+                    onClick={() => handleAction("completed")}
+                    className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors duration-150"
+                  >
+                    <span className="font-medium">Completed</span>
+                  </button>
+                  <button
+                    onClick={() => handleAction("noshow")}
+                    className="flex items-center gap-2 px-4 py-2 bg-red-400 text-white rounded-lg hover:bg-red-500 transition-colors duration-150"
+                  >
+                    <span className="font-medium">No Show</span>
+                  </button>
+                </>
+              )}
+
+              {["Cancelled", "No Show", "Completed", "Declined"].includes(
+                appointment.status,
+              ) && (
+                <button
+                  onClick={handleArchive}
+                  className="flex items-center gap-2 px-4 py-2 bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-lg hover:bg-zinc-300 dark:hover:bg-zinc-700 transition-colors duration-150"
+                >
+                  <Archive className="w-4 h-4" />
+                  <span className="font-medium">Archive</span>
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
@@ -441,11 +465,8 @@ function ViewAppointment() {
                     {appointment._id.slice(0, 8).toUpperCase()}
                   </h2>
                 </div>
-
                 <div
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-white font-medium ${
-                    statusColors[appointment.status] || "bg-gray-400"
-                  }`}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-white font-medium ${statusColors[appointment.status] || "bg-gray-400"}`}
                 >
                   {getStatusIcon(appointment.status)}
                   <span>
@@ -584,30 +605,35 @@ function ViewAppointment() {
                   <FileText className="w-5 h-5 text-zinc-600 dark:text-zinc-400" />
                   <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-50">
                     Medical Records
+                    {medicalRecords.length > 0 && (
+                      <span className="ml-2 text-sm font-normal text-zinc-500 dark:text-zinc-400">
+                        ({medicalRecords.length})
+                      </span>
+                    )}
                   </h3>
                 </div>
 
-                {!appointment.medicalRecord && (
-                  <label
-                    htmlFor="medical-record-upload"
-                    className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-150 cursor-pointer text-sm font-medium"
-                  >
-                    <Upload className="w-4 h-4" />
-                    <span>Upload Record</span>
-                    <input
-                      id="medical-record-upload"
-                      ref={fileInputRef}
-                      type="file"
-                      onChange={handleFileUpload}
-                      accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                      className="hidden"
-                      disabled={uploading}
-                    />
-                  </label>
-                )}
+                {/* Upload trigger */}
+                <label
+                  htmlFor="medical-record-upload"
+                  className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-150 cursor-pointer text-sm font-medium"
+                >
+                  <Upload className="w-4 h-4" />
+                  <span>Add Files</span>
+                  <input
+                    id="medical-record-upload"
+                    ref={fileInputRef}
+                    type="file"
+                    onChange={handleFileChange}
+                    accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                    multiple
+                    className="hidden"
+                    disabled={uploading}
+                  />
+                </label>
               </div>
 
-              {/* Upload Status Messages */}
+              {/* Status Messages */}
               {uploadError && (
                 <div className="mb-4 p-3 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg flex items-start gap-2">
                   <XCircle className="w-5 h-5 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
@@ -636,7 +662,7 @@ function ViewAppointment() {
                       Upload Successful
                     </p>
                     <p className="text-xs text-green-600 dark:text-green-300 mt-1">
-                      Medical record has been uploaded successfully.
+                      Medical records have been uploaded successfully.
                     </p>
                   </div>
                   <button
@@ -648,61 +674,128 @@ function ViewAppointment() {
                 </div>
               )}
 
-              {uploading && (
-                <div className="p-4 bg-blue-50 dark:bg-blue-950 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="animate-spin rounded-full h-5 w-5 border-2 border-blue-600 dark:border-blue-400 border-t-transparent" />
-                    <p className="text-sm text-blue-700 dark:text-blue-300 font-medium">
-                      Uploading medical record...
-                    </p>
+              {/* Staged files preview */}
+              {selectedFiles.length > 0 && (
+                <div className="mb-4 p-3 bg-zinc-50 dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 space-y-2">
+                  <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-2">
+                    Ready to upload ({selectedFiles.length}{" "}
+                    {selectedFiles.length === 1 ? "file" : "files"})
+                  </p>
+
+                  {selectedFiles.map((file, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-center justify-between gap-2 text-sm"
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        {getFileIcon(file.name)}
+                        <span className="truncate text-zinc-700 dark:text-zinc-300">
+                          {file.name}
+                        </span>
+                        <span className="shrink-0 text-xs text-zinc-400">
+                          {(file.size / 1024 / 1024).toFixed(1)} MB
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => removeSelectedFile(idx)}
+                        className="shrink-0 text-zinc-400 hover:text-red-500 transition-colors"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+
+                  <div className="pt-2 flex justify-end">
+                    <button
+                      onClick={handleUpload}
+                      disabled={uploading}
+                      className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+                    >
+                      {uploading ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                          <span>Uploading...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="w-4 h-4" />
+                          <span>
+                            Upload{" "}
+                            {selectedFiles.length === 1
+                              ? "File"
+                              : `${selectedFiles.length} Files`}
+                          </span>
+                        </>
+                      )}
+                    </button>
                   </div>
                 </div>
               )}
 
-              {appointment.medicalRecord ? (
-                <div className="p-4 bg-zinc-50 dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3 flex-1">
-                      <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded">
-                        {getFileIcon(appointment.medicalRecord.filename)}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-zinc-900 dark:text-zinc-50 truncate">
-                          {appointment.medicalRecord.filename}
-                        </p>
-                        <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                          Medical Record Document
-                        </p>
+              {/* Uploaded records list */}
+              {medicalRecords.length > 0 ? (
+                <div className="space-y-2">
+                  {medicalRecords.map((record) => (
+                    <div
+                      key={record._id}
+                      className="p-4 bg-zinc-50 dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800"
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                          <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded shrink-0">
+                            {getFileIcon(record.filename)}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-zinc-900 dark:text-zinc-50 truncate text-sm">
+                              {record.originalName}
+                            </p>
+                            <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                              {dayjs(record.uploadedAt).format(
+                                "MMM DD, YYYY h:mm A",
+                              )}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0">
+                          <a
+                            href={record.fileUrl}
+                            download
+                            target="_blank"
+                            rel="noreferrer"
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-900 dark:bg-zinc-100 text-zinc-100 dark:text-zinc-900 rounded-lg hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors text-sm font-medium"
+                          >
+                            <Download className="w-4 h-4" />
+                            <span>Download</span>
+                          </a>
+
+                          <button
+                            onClick={() =>
+                              handleDeleteMedicalRecord(record._id)
+                            }
+                            disabled={deletingRecordId === record._id}
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            title="Delete this record"
+                          >
+                            {deletingRecordId === record._id ? (
+                              <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                            ) : (
+                              <Trash2 className="w-4 h-4" />
+                            )}
+                          </button>
+                        </div>
                       </div>
                     </div>
-
-                    <div className="flex items-center gap-2 ml-3">
-                      <a
-                        href={appointment.medicalRecord.fileUrl}
-                        download
-                        className="flex items-center gap-2 px-3 py-2 bg-zinc-900 dark:bg-zinc-100 text-zinc-100 dark:text-zinc-900 rounded-lg hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors duration-150"
-                      >
-                        <Download className="w-4 h-4" />
-                        <span className="text-sm font-medium">Download</span>
-                      </a>
-
-                      <button
-                        onClick={handleDeleteMedicalRecord}
-                        className="flex items-center gap-2 px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-150"
-                        title="Delete medical record"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
+                  ))}
                 </div>
               ) : (
-                !uploading && (
+                !uploading &&
+                selectedFiles.length === 0 && (
                   <div className="text-center py-8 text-zinc-500 dark:text-zinc-400">
                     <FileText className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                    <p className="text-sm">No medical record uploaded yet</p>
+                    <p className="text-sm">No medical records uploaded yet</p>
                     <p className="text-xs mt-1">
-                      Click "Upload Record" to add a medical record
+                      Click "Add Files" to attach medical records
                     </p>
                   </div>
                 )
@@ -752,7 +845,7 @@ function ViewAppointment() {
               </div>
             </div>
 
-            {/* Payment Status */}
+            {/* Payment */}
             <div className="bg-system-white dark:bg-system-black rounded-xl border border-zinc-300 dark:border-zinc-700 p-6">
               <div className="flex items-center gap-2 mb-4">
                 <DollarSign className="w-5 h-5 text-zinc-600 dark:text-zinc-400" />
@@ -762,7 +855,6 @@ function ViewAppointment() {
               </div>
 
               <div className="space-y-3">
-                {/* Service Breakdown */}
                 {Array.isArray(appointment.medicalDepartment) &&
                   appointment.medicalDepartment.length > 0 && (
                     <div className="p-3 bg-zinc-50 dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800">
@@ -770,33 +862,30 @@ function ViewAppointment() {
                         Service Fees
                       </p>
                       <div className="space-y-1.5">
-                        {appointment.medicalDepartment.map((service, idx) => {
-                          const serviceName = getServiceName(service);
-                          const servicePrice = getServicePrice(service);
-
-                          return (
-                            <div
-                              key={idx}
-                              className="flex items-center justify-between text-sm"
-                            >
-                              <span className="text-zinc-600 dark:text-zinc-400">
-                                {serviceName}
-                              </span>
-                              <span className="font-medium text-zinc-900 dark:text-zinc-50">
-                                ₱
-                                {Number(servicePrice).toLocaleString("en-PH", {
+                        {appointment.medicalDepartment.map((service, idx) => (
+                          <div
+                            key={idx}
+                            className="flex items-center justify-between text-sm"
+                          >
+                            <span className="text-zinc-600 dark:text-zinc-400">
+                              {getServiceName(service)}
+                            </span>
+                            <span className="font-medium text-zinc-900 dark:text-zinc-50">
+                              ₱
+                              {Number(getServicePrice(service)).toLocaleString(
+                                "en-PH",
+                                {
                                   minimumFractionDigits: 2,
                                   maximumFractionDigits: 2,
-                                })}
-                              </span>
-                            </div>
-                          );
-                        })}
+                                },
+                              )}
+                            </span>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   )}
 
-                {/* Total Price Display */}
                 <div className="p-4 bg-blue-50 dark:bg-blue-950 rounded-lg border-2 border-blue-200 dark:border-blue-800">
                   <p className="text-xs text-blue-600 dark:text-blue-400 mb-1 font-medium">
                     Total Amount
@@ -839,12 +928,7 @@ function ViewAppointment() {
                 <div className="flex gap-3">
                   <div className="flex flex-col items-center">
                     <div
-                      className={`w-2 h-2 rounded-full ${
-                        appointment.status === "Approved" ||
-                        appointment.status === "Completed"
-                          ? "bg-green-600 dark:bg-green-400"
-                          : "bg-zinc-300 dark:bg-zinc-600"
-                      }`}
+                      className={`w-2 h-2 rounded-full ${appointment.status === "Approved" || appointment.status === "Completed" ? "bg-green-600 dark:bg-green-400" : "bg-zinc-300 dark:bg-zinc-600"}`}
                     />
                     <div className="w-0.5 h-full bg-zinc-200 dark:bg-zinc-700" />
                   </div>

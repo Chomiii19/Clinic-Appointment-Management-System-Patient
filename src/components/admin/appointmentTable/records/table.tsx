@@ -223,19 +223,21 @@ function Table({
                           </div>
                         </td>
                         <td className="py-2 px-5 whitespace-nowrap">
-                          {appt?.medicalRecord?.fileUrl ? (
-                            <div className="flex items-center gap-1">
-                              <a
-                                href={appt?.medicalRecord?.fileUrl ?? "/"}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center px-2 border border-green-500 text-green-500 bg-green-200/20 rounded-md w-fit"
-                              >
-                                {truncateFilename(
-                                  appt?.medicalRecord?.filename ?? "",
-                                )}
-                                <ArrowUpRight className="w-4" />
-                              </a>
+                          {appt.medicalRecords &&
+                          appt.medicalRecords.length > 0 ? (
+                            <div className="flex flex-col gap-1">
+                              {appt.medicalRecords.map((record) => (
+                                <a
+                                  key={record._id}
+                                  href={record.fileUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex items-center px-2 border border-green-500 text-green-500 bg-green-200/20 rounded-md w-fit"
+                                >
+                                  {truncateFilename(record.filename ?? "")}
+                                  <ArrowUpRight className="w-4" />
+                                </a>
+                              ))}
                             </div>
                           ) : appt.status === "Completed" ? (
                             <>
@@ -246,7 +248,6 @@ function Table({
                               >
                                 <Upload className="w-4" /> Upload
                               </button>
-
                               <input
                                 type="file"
                                 ref={fileInputRef}
