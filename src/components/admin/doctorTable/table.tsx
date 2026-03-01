@@ -147,9 +147,6 @@ function Table({
                             >
                               Edit
                             </button>
-                            <button className="px-3 py-1 rounded-lg bg-red-500 text-white font-bold cursor-pointer">
-                              Delete
-                            </button>
                           </div>
                         </td>
                       </tr>
