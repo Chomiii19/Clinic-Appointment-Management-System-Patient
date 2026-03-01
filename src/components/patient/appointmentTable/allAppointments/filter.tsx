@@ -63,9 +63,14 @@ function Filter({
           withCredentials: true,
         });
         const doctors: Options[] = res.data.data.map(
-          (svc: { name: string }) => ({
-            value: svc.name,
-            label: svc.name,
+          (svc: {
+            _id: string;
+            firstname: string;
+            middlename: string;
+            surname: string;
+          }) => ({
+            value: svc._id,
+            label: `${svc.firstname} ${svc.middlename} ${svc.surname}`,
           }),
         );
         setDoctorOptions(doctors);

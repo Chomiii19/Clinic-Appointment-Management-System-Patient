@@ -1,24 +1,17 @@
-import Select, {
-  components,
-  type OptionProps,
-  type SingleValueProps,
-} from "react-select";
 import { ChevronsUpDown, Wand } from "lucide-react";
 import { useState, type JSX } from "react";
 import { CustomCheckbox } from "../../../Checkbox";
 import { tableHeaders } from "./headers/archiveAppointments";
 import type {
   IAppointment,
-  IDoctor,
   IService,
+  PopulatedDoctor,
 } from "../../../../@types/interface";
 import dayjs from "dayjs";
 import Pagination from "../pagination";
 import { serviceColors, statusColors } from "../data";
 import { BACKEND_DOMAIN } from "../../../../configs/config";
 import axios from "axios";
-import { doctorSelectStyles } from "./styles";
-import { useDarkMode } from "../../../../hooks/useDarkMode";
 import { Link } from "react-router-dom";
 
 export type Options = {
@@ -54,44 +47,8 @@ function Table({
   setRefresh: React.Dispatch<React.SetStateAction<number>>;
   loading: boolean;
 }) {
-  const { darkMode } = useDarkMode();
   const [selectAll, setSelectAll] = useState(false);
   const [selectedRows, setSelectedRows] = useState<Record<string, boolean>>({});
-  const [doctorOptions, setDoctorOptions] = useState<
-    Record<string, DoctorOptionType[]>
-  >({});
-
-  const loadDoctorsForAppointment = async (apptId: string) => {
-    try {
-      const res = await axios.get(
-        `${BACKEND_DOMAIN}/api/v1/appointments/${apptId}/doctors-available`,
-        { withCredentials: true },
-      );
-
-      return res.data.data.map((d: IDoctor) => ({
-        value: d._id,
-        label: `${d.firstname} ${d.surname}`,
-        image: "/assets/images/profile-doctor.jpg",
-      }));
-    } catch (err) {
-      console.error("Failed to load doctors:", err);
-      return [];
-    }
-  };
-
-  const handleDoctorUpdate = async (apptId: string, doctorId: string) => {
-    try {
-      await axios.patch(
-        `${BACKEND_DOMAIN}/api/v1/appointments/${apptId}/doctor`,
-        { doctorId },
-        { withCredentials: true },
-      );
-
-      setRefresh((prev) => prev + 1);
-    } catch (err) {
-      console.error("Failed to update doctor:", err);
-    }
-  };
 
   const handleAction = async (id: string, action: string) => {
     try {
@@ -248,56 +205,36 @@ function Table({
                           {dayjs(appt.schedule).format("h:mm A")}
                         </td>
                         <td className="py-2 px-5 text-zinc-950 dark:text-zinc-50 font-medium">
-                          <div
-                            title={
-                              appt.status !== "Approved"
-                                ? "Doctor can only be assigned if status is On Queue"
-                                : ""
-                            }
-                            className={`${
-                              appt.status !== "Approved"
-                                ? "cursor-not-allowed opacity-70"
-                                : "cursor-pointer"
-                            }`}
-                          >
-                            <Select<DoctorOptionType, false>
-                              placeholder="Select Doctor"
-                              isDisabled={appt.status !== "Approved"}
-                              options={doctorOptions[appt._id] || []}
-                              onMenuOpen={async () => {
-                                if (doctorOptions[appt._id]) return;
-
-                                const options = await loadDoctorsForAppointment(
-                                  appt._id,
-                                );
-                                setDoctorOptions((prev) => ({
-                                  ...prev,
-                                  [appt._id]: options,
-                                }));
-                              }}
-                              onChange={(opt) => {
-                                if (!opt) return;
-                                handleDoctorUpdate(appt._id, opt.value);
-                              }}
-                              value={
-                                appt.doctorId
-                                  ? {
-                                      value: appt.doctorId._id,
-                                      label: `${appt.doctorId.firstname} ${appt.doctorId.surname}`,
-                                      image:
-                                        "/assets/images/profile-doctor.jpg",
-                                    }
-                                  : null
-                              }
-                              className="w-40"
-                              styles={doctorSelectStyles(darkMode)}
-                              components={{
-                                IndicatorSeparator: () => null,
-                                Option: DoctorOption,
-                                SingleValue: DoctorSingleValue,
-                              }}
-                            />
-                          </div>
+                          {Array.isArray(appt.doctorId) &&
+                          appt.doctorId.length > 0 ? (
+                            <div className="flex flex-col gap-1">
+                              {(appt.doctorId as PopulatedDoctor[]).map(
+                                (doc, idx) => (
+                                  <div
+                                    key={idx}
+                                    className="flex items-center gap-2"
+                                  >
+                                    <img
+                                      src="/assets/images/profile-doctor.jpg"
+                                      alt="profile"
+                                      className="w-7 h-7 rounded-full"
+                                    />
+                                    <p className="w-fit whitespace-nowrap">
+                                      {doc.firstname}{" "}
+                                      {doc.middlename
+                                        ? `${doc.middlename[0]}.`
+                                        : ""}{" "}
+                                      {doc.surname}
+                                    </p>
+                                  </div>
+                                ),
+                              )}
+                            </div>
+                          ) : (
+                            <p className="w-fit whitespace-nowrap text-zinc-400">
+                              No doctor assigned yet
+                            </p>
+                          )}
                         </td>
                         <td className="py-2 px-5 whitespace-nowrap">
                           <div className="flex flex-col gap-2 items-start">
@@ -429,37 +366,5 @@ export interface DoctorOptionType {
   label: string;
   image?: string;
 }
-
-const DoctorOption = (props: OptionProps<DoctorOptionType, false>) => {
-  return (
-    <components.Option {...props}>
-      <div className="flex items-center gap-2">
-        <img
-          src={props.data.image || "/assets/images/user-profile.jpg"}
-          alt="profile"
-          className="w-7 h-7 rounded-full"
-        />
-        <span>{props.data.label}</span>
-      </div>
-    </components.Option>
-  );
-};
-
-const DoctorSingleValue = (
-  props: SingleValueProps<DoctorOptionType, false>,
-) => {
-  return (
-    <components.SingleValue {...props}>
-      <div className="flex items-center gap-2">
-        <img
-          src={props.data.image || "/assets/images/profile-doctor.jpg"}
-          alt="profile"
-          className="w-7 h-7 rounded-full"
-        />
-        <span>{props.data.label}</span>
-      </div>
-    </components.SingleValue>
-  );
-};
 
 export default Table;
