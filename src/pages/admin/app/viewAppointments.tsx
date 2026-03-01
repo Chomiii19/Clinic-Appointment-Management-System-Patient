@@ -23,6 +23,7 @@ import {
   File,
   X,
   Pen,
+  CalendarClock,
 } from "lucide-react";
 import { BACKEND_DOMAIN } from "../../../configs/config";
 import type { IAppointment, IService } from "../../../@types/interface";
@@ -84,6 +85,35 @@ function ViewAppointment() {
   const [selectedDoctors, setSelectedDoctors] = useState<DoctorOption[]>([]);
   const [assigningDoctors, setAssigningDoctors] = useState(false);
   const [doctorsLoaded, setDoctorsLoaded] = useState(false);
+
+  const [openRescheduleModal, setOpenRescheduleModal] = useState(false);
+  const [rescheduleSchedule, setRescheduleSchedule] = useState("");
+
+  const handleReschedule = async () => {
+    if (!appointment) return;
+    try {
+      await axios.patch(
+        `${BACKEND_DOMAIN}/api/v1/appointments/${appointment._id}`,
+        {
+          schedule: rescheduleSchedule,
+          medicalDepartment: Array.isArray(appointment.medicalDepartment)
+            ? appointment.medicalDepartment.map((s) =>
+                typeof s === "string" ? s : s._id,
+              )
+            : [
+                typeof appointment.medicalDepartment === "string"
+                  ? appointment.medicalDepartment
+                  : appointment.medicalDepartment._id,
+              ],
+        },
+        { withCredentials: true },
+      );
+      setOpenRescheduleModal(false);
+      await fetchAppointment();
+    } catch (error) {
+      console.error("Reschedule failed:", error);
+    }
+  };
 
   useEffect(() => {
     fetchAppointment();
@@ -499,6 +529,21 @@ function ViewAppointment() {
             />
           </div>
         )}
+
+        {openRescheduleModal && (
+          <div
+            onClick={() => setOpenRescheduleModal(false)}
+            className="fixed inset-0 z-60 flex justify-center items-center bg-black/15 dark:bg-black/25"
+          >
+            <RescheduleModal
+              schedule={rescheduleSchedule}
+              setSchedule={setRescheduleSchedule}
+              onSubmit={handleReschedule}
+              onClose={() => setOpenRescheduleModal(false)}
+            />
+          </div>
+        )}
+
         <div className="flex items-center gap-1 w-full">
           <Menu
             onClick={() => setOpenSidebar(true)}
@@ -593,10 +638,18 @@ function ViewAppointment() {
                       Completed
                     </button>
                     <button
-                      onClick={() => handleAction("noshow")}
-                      className="flex items-center gap-2 px-4 py-2 bg-red-400 text-white rounded-lg hover:bg-red-500 transition-colors duration-150"
+                      onClick={() => {
+                        setRescheduleSchedule(
+                          dayjs(appointment.schedule).format(
+                            "YYYY-MM-DDTHH:mm",
+                          ),
+                        );
+                        setOpenRescheduleModal(true);
+                      }}
+                      className="flex items-center gap-2 px-4 py-2 bg-amber-400 text-white rounded-lg hover:bg-amber-500 transition-colors duration-150"
                     >
-                      <span className="font-medium">No Show</span>
+                      <CalendarClock className="w-4 h-4" />
+                      <span className="font-medium">Reschedule</span>
                     </button>
                   </>
                 )}
@@ -827,25 +880,26 @@ function ViewAppointment() {
                 </div>
 
                 {/* Upload trigger */}
-                {currentUser?.role === "admin" && (
-                  <label
-                    htmlFor="medical-record-upload"
-                    className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-150 cursor-pointer text-sm font-medium"
-                  >
-                    <Upload className="w-4 h-4" />
-                    <span>Add Files</span>
-                    <input
-                      id="medical-record-upload"
-                      ref={fileInputRef}
-                      type="file"
-                      onChange={handleFileChange}
-                      accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                      multiple
-                      className="hidden"
-                      disabled={uploading}
-                    />
-                  </label>
-                )}
+                {currentUser?.role === "admin" &&
+                  appointment.status === "Completed" && (
+                    <label
+                      htmlFor="medical-record-upload"
+                      className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-150 cursor-pointer text-sm font-medium"
+                    >
+                      <Upload className="w-4 h-4" />
+                      <span>Add Files</span>
+                      <input
+                        id="medical-record-upload"
+                        ref={fileInputRef}
+                        type="file"
+                        onChange={handleFileChange}
+                        accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                        multiple
+                        className="hidden"
+                        disabled={uploading}
+                      />
+                    </label>
+                  )}
               </div>
 
               {/* Status Messages */}
@@ -1261,6 +1315,60 @@ function ServiceModal({
             className="bg-zinc-900 text-zinc-100 px-3 py-1 rounded-full font-bold cursor-pointer"
           >
             Save
+          </button>
+        </div>
+      </section>
+    </form>
+  );
+}
+function RescheduleModal({
+  schedule,
+  setSchedule,
+  onSubmit,
+  onClose,
+}: {
+  schedule: string;
+  setSchedule: React.Dispatch<React.SetStateAction<string>>;
+  onSubmit: () => void;
+  onClose: () => void;
+}) {
+  return (
+    <form
+      onClick={(e) => e.stopPropagation()}
+      onSubmit={(e) => {
+        e.preventDefault();
+        onSubmit();
+      }}
+      className="absolute z-70 bg-system-white dark:bg-system-black shadow-xl lg:w-[400px] rounded-2xl mx-5 lg:mx-0"
+    >
+      <header className="p-5 pb-2 border-b border-zinc-300 dark:border-zinc-700">
+        <h1 className="font-bold text-lg">Reschedule Appointment</h1>
+        <p className="text-sm text-zinc-400">
+          Select a new date and time for this appointment.
+        </p>
+      </header>
+      <section className="p-5 pt-2 flex flex-col gap-3.5 text-sm">
+        <div className="flex flex-col gap-1 w-full">
+          <label>
+            New Schedule <span className="text-red-500">*</span>
+          </label>
+          <input
+            required
+            type="datetime-local"
+            value={schedule}
+            onChange={(e) => setSchedule(e.target.value)}
+            className="border border-zinc-300 dark:border-zinc-700 outline-none rounded-md px-2 py-0.5 w-full"
+          />
+        </div>
+        <div className="flex items-center w-full justify-end gap-3">
+          <button type="button" onClick={onClose} className="cursor-pointer">
+            Cancel
+          </button>
+          <button
+            type="submit"
+            className="bg-zinc-900 text-zinc-100 px-3 py-1 rounded-full font-bold cursor-pointer"
+          >
+            Confirm Reschedule
           </button>
         </div>
       </section>
