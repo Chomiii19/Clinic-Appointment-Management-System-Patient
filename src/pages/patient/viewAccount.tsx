@@ -544,7 +544,9 @@ function ViewAccount() {
                           </td>
                           <td className="px-6 py-4">
                             <p className="text-sm text-zinc-900 dark:text-zinc-50">
-                              {appointment.doctorName || "Not assigned"}
+                              {appointment.doctorId
+                                ? `${appointment.doctorId.firstname} ${appointment.doctorId.middlename} ${appointment.doctorId.surname}`
+                                : "Not assigned"}
                             </p>
                           </td>
                           <td className="px-6 py-4">

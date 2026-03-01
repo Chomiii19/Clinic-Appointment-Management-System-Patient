@@ -134,10 +134,12 @@ function ViewAppointment() {
       setSelectedDoctors(
         current.filter(Boolean).map((d) => ({
           value: d._id,
-          label: `${d.firstname} ${d.middlename ?? ""} ${d.surname}`,
+          label: `${d.firstname} ${d.middlename ?? ""} ${d.surname}`.trim(),
           specialization: d.specialization,
         })),
       );
+    } else {
+      setSelectedDoctors([]);
     }
   }, [appointment]);
 
