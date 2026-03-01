@@ -7,7 +7,11 @@ import Pagination from "../pagination";
 import { serviceColors, statusColors } from "../data";
 import { BACKEND_DOMAIN } from "../../../../configs/config";
 import axios from "axios";
-import type { IAppointment, IService } from "../../../../@types/interface";
+import type {
+  IAppointment,
+  IService,
+  PopulatedDoctor,
+} from "../../../../@types/interface";
 import { useNavigate } from "react-router-dom";
 
 export type Options = {
@@ -184,18 +188,30 @@ function Table({
                           {dayjs(appt.schedule).format("MM/DD/YY, h:mm A")}
                         </td>
                         <td className="py-2 px-5 text-zinc-950 dark:text-zinc-50 font-medium">
-                          {appt.doctorId?.firstname ? (
-                            <div className="flex items-center gap-2">
-                              <img
-                                src="/assets/images/profile-doctor.jpg"
-                                alt="profile"
-                                className="w-7 h-7 rounded-full"
-                              />
-                              <p className="w-fit whitespace-nowrap">
-                                {appt.doctorId?.firstname}{" "}
-                                {appt.doctorId?.middlename}{" "}
-                                {appt.doctorId?.surname}
-                              </p>
+                          {Array.isArray(appt.doctorId) &&
+                          appt.doctorId.length > 0 ? (
+                            <div className="flex flex-col gap-1">
+                              {(appt.doctorId as PopulatedDoctor[]).map(
+                                (doc, idx) => (
+                                  <div
+                                    key={idx}
+                                    className="flex items-center gap-2"
+                                  >
+                                    <img
+                                      src="/assets/images/profile-doctor.jpg"
+                                      alt="profile"
+                                      className="w-7 h-7 rounded-full"
+                                    />
+                                    <p className="w-fit whitespace-nowrap">
+                                      {doc.firstname}{" "}
+                                      {doc.middlename
+                                        ? `${doc.middlename[0]}.`
+                                        : ""}{" "}
+                                      {doc.surname}
+                                    </p>
+                                  </div>
+                                ),
+                              )}
                             </div>
                           ) : (
                             <p className="w-fit whitespace-nowrap text-zinc-400">

@@ -44,8 +44,8 @@ function Filter({
           withCredentials: true,
         });
         const services: Options[] = res.data.data.map(
-          (svc: { name: string }) => ({
-            value: svc.name,
+          (svc: { _id: string; name: string }) => ({
+            value: svc._id,
             label: svc.name,
           }),
         );

@@ -123,7 +123,8 @@ function Table({
                               className="w-7 h-7 rounded-full"
                             />
                             <p className="w-fit whitespace-nowrap">
-                              {d.doctorId.firstname} {d.doctorId.middlename[0]}.{" "}
+                              {d.doctorId.firstname}{" "}
+                              {d.doctorId.middlename[0] ?? ""}.{" "}
                               {d.doctorId.surname}
                             </p>
                           </div>

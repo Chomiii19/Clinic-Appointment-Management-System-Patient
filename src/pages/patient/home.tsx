@@ -135,8 +135,8 @@ function Home() {
         const normalizedData = response.data.data.map((appt: IAppointment) => {
           let medicalDepartment: string[] = [];
           if (Array.isArray(appt.medicalDepartment)) {
-            medicalDepartment = appt.medicalDepartment.map((dep) =>
-              typeof dep === "string" ? dep : dep.name,
+            medicalDepartment = appt.medicalDepartment.map(
+              (dep) => (typeof dep === "string" ? dep : dep.name), // <-- here
             );
           } else if (typeof appt.medicalDepartment === "string") {
             medicalDepartment = [appt.medicalDepartment];
@@ -254,6 +254,12 @@ function Home() {
   );
 }
 
+interface ServiceOption {
+  value: string; // _id
+  label: string; // name
+  price: number;
+}
+
 /* ------------------- AddService Component ------------------- */
 function AddService({
   handleAddAdmin,
@@ -266,23 +272,25 @@ function AddService({
   setFormState: React.Dispatch<React.SetStateAction<DoctorFormData>>;
   setOpenAddModal: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
-  const [serviceOptions, setServiceOptions] = useState<Options[]>([]);
-  const [servicePrices, setServicePrices] = useState<{ [key: string]: number }>(
-    {},
+  const [serviceOptions, setServiceOptions] = useState<ServiceOption[]>([]);
+  const [selectedServices, setSelectedServices] = useState<ServiceOption[]>([]);
+  const estimatedFee = selectedServices.reduce(
+    (sum, svc) => sum + svc.price,
+    0,
   );
-  const [estimatedFee, setEstimatedFee] = useState(0);
 
-  // Fetch available services
+  // Fetch available services — now store _id as value and price directly
   useEffect(() => {
     const fetchServices = async () => {
       try {
         const res = await axios.get(`${BACKEND_DOMAIN}/api/v1/services`, {
           withCredentials: true,
         });
-        const options: Options[] = res.data.data.map(
-          (svc: { name: string }) => ({
-            value: svc.name,
+        const options: ServiceOption[] = res.data.data.map(
+          (svc: { _id: string; name: string; price: number }) => ({
+            value: svc._id,
             label: svc.name,
+            price: svc.price,
           }),
         );
         setServiceOptions(options);
@@ -292,47 +300,6 @@ function AddService({
     };
     fetchServices();
   }, []);
-
-  // Fetch prices whenever selected services change
-  useEffect(() => {
-    const fetchServicePrices = async () => {
-      if (!formState.medicalDepartment.length) {
-        setServicePrices({});
-        setEstimatedFee(0);
-        return;
-      }
-
-      try {
-        const res = await axios.post(
-          `${BACKEND_DOMAIN}/api/v1/services/prices`,
-          { names: formState.medicalDepartment },
-          { withCredentials: true },
-        );
-
-        if (res.data.status === "success") {
-          setServicePrices(res.data.data);
-
-          // Calculate total
-          const total = formState.medicalDepartment.reduce(
-            (sum, serviceName) => {
-              return sum + (res.data.data[serviceName] || 0);
-            },
-            0,
-          );
-          setEstimatedFee(total);
-        }
-      } catch (error) {
-        console.error("Failed to fetch service prices", error);
-      }
-    };
-
-    fetchServicePrices();
-  }, [formState.medicalDepartment]);
-
-  const safeValue = formState.medicalDepartment.map((dep) => ({
-    value: dep,
-    label: dep,
-  }));
 
   return (
     <form
@@ -355,35 +322,37 @@ function AddService({
           <label>
             Services <span className="text-red-500">*</span>
           </label>
-          <Select<{ value: string; label: string }, true>
+          <Select<ServiceOption, true>
             isMulti
             options={serviceOptions}
-            value={safeValue}
-            onChange={(selected) =>
+            value={selectedServices}
+            onChange={(selected) => {
+              const arr = [...selected];
+              setSelectedServices(arr);
               setFormState((prev) => ({
                 ...prev,
-                medicalDepartment: selected.map((s) => s.value),
-              }))
-            }
+                medicalDepartment: arr.map((s) => s.value),
+              }));
+            }}
           />
         </div>
 
-        {formState.medicalDepartment.length > 0 && (
+        {selectedServices.length > 0 && (
           <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
             <div className="flex flex-col gap-2">
               <p className="text-xs font-medium text-blue-600 dark:text-blue-400">
                 Service Breakdown
               </p>
-              {formState.medicalDepartment.map((serviceName, idx) => (
+              {selectedServices.map((svc) => (
                 <div
-                  key={idx}
+                  key={svc.value}
                   className="flex items-center justify-between text-sm"
                 >
                   <span className="text-zinc-600 dark:text-zinc-400">
-                    {serviceName}
+                    {svc.label}
                   </span>
                   <span className="font-medium text-zinc-900 dark:text-zinc-50">
-                    ₱{(servicePrices[serviceName] || 0).toLocaleString()}
+                    ₱{svc.price.toLocaleString()}
                   </span>
                 </div>
               ))}
@@ -419,6 +388,7 @@ function AddService({
             onClick={() => {
               setOpenAddModal(false);
               setFormState({ schedule: "", medicalDepartment: [] });
+              setSelectedServices([]);
             }}
             type="button"
             className="cursor-pointer"
@@ -451,13 +421,33 @@ function ServiceModal({
   onClose: () => void;
   title: string;
 }) {
-  // compute serviceOptions on render
-  const serviceOptions = formState.medicalDepartment.map((dep) => ({
-    value: dep,
-    label: dep,
-  }));
+  const [serviceOptions, setServiceOptions] = useState<ServiceOption[]>([]);
 
-  const safeValue = serviceOptions; // same thing
+  useEffect(() => {
+    const fetchServices = async () => {
+      try {
+        const res = await axios.get(`${BACKEND_DOMAIN}/api/v1/services`, {
+          withCredentials: true,
+        });
+        const options: ServiceOption[] = res.data.data.map(
+          (svc: { _id: string; name: string; price: number }) => ({
+            value: svc._id,
+            label: svc.name,
+            price: svc.price,
+          }),
+        );
+        setServiceOptions(options);
+      } catch (err) {
+        console.error("Failed to fetch services", err);
+      }
+    };
+    fetchServices();
+  }, []);
+
+  // Map current _ids back to full option objects for display
+  const selectedValues = serviceOptions.filter((opt) =>
+    formState.medicalDepartment.includes(opt.value),
+  );
 
   return (
     <form
@@ -477,14 +467,14 @@ function ServiceModal({
           <label>
             Services <span className="text-red-500">*</span>
           </label>
-          <Select<{ value: string; label: string }, true>
+          <Select<ServiceOption, true>
             isMulti
             options={serviceOptions}
-            value={safeValue}
+            value={selectedValues}
             onChange={(selected) =>
               setFormState((prev) => ({
                 ...prev,
-                medicalDepartment: selected.map((s) => s.value),
+                medicalDepartment: selected.map((s) => s.value), // _ids
               }))
             }
           />

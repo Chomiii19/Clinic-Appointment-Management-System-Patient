@@ -1,20 +1,17 @@
-import Select, {
-  components,
-  type OptionProps,
-  type SingleValueProps,
-} from "react-select";
 import { ChevronsUpDown, Wand } from "lucide-react";
-import { useEffect, useState, type JSX } from "react";
+import { useState, type JSX } from "react";
 import { CustomCheckbox } from "../../../Checkbox";
 import { tableHeaders } from "./headers/archiveAppointments";
-import type { IAppointment, IDoctor } from "../../../../@types/interface";
+import type {
+  IAppointment,
+  IService,
+  PopulatedDoctor,
+} from "../../../../@types/interface";
 import dayjs from "dayjs";
 import Pagination from "../pagination";
 import { serviceColors, statusColors } from "../data";
 import { BACKEND_DOMAIN } from "../../../../configs/config";
 import axios from "axios";
-import { doctorSelectStyles } from "./styles";
-import { useDarkMode } from "../../../../hooks/useDarkMode";
 
 export type Options = {
   value: string;
@@ -49,45 +46,8 @@ function Table({
   setRefresh: React.Dispatch<React.SetStateAction<number>>;
   loading: boolean;
 }) {
-  const { darkMode } = useDarkMode();
   const [selectAll, setSelectAll] = useState(false);
   const [selectedRows, setSelectedRows] = useState<Record<string, boolean>>({});
-  const [doctors, setDoctors] = useState<DoctorOptionType[]>([]);
-
-  useEffect(() => {
-    const loadDoctors = async () => {
-      try {
-        const res = await axios.get(`${BACKEND_DOMAIN}/api/v1/doctors`, {
-          withCredentials: true,
-        });
-        setDoctors(
-          res.data.data.map((d: IDoctor) => ({
-            value: d._id,
-            label: d.name,
-            image: "/assets/images/profile-doctor.jpg",
-          })),
-        );
-      } catch (err) {
-        console.error("Failed to load doctors:", err);
-      }
-    };
-
-    loadDoctors();
-  }, []);
-
-  const handleDoctorUpdate = async (apptId: string, doctorId: string) => {
-    try {
-      await axios.patch(
-        `${BACKEND_DOMAIN}/api/v1/appointments/${apptId}/doctor`,
-        { doctorId },
-        { withCredentials: true },
-      );
-
-      setRefresh((prev) => prev + 1);
-    } catch (err) {
-      console.error("Failed to update doctor:", err);
-    }
-  };
 
   const handleAction = async (id: string, action: string) => {
     try {
@@ -127,6 +87,16 @@ function Table({
   };
 
   const onPageChange = (page: number) => setCurrentPage(page);
+
+  const getServiceName = (service: string | IService): string => {
+    return typeof service === "string" ? service : service.name;
+  };
+
+  const normalizeMedicalDepartment = (
+    dept: string | IService | (string | IService)[],
+  ): (string | IService)[] => {
+    return Array.isArray(dept) ? dept : [dept];
+  };
 
   return (
     <div className="rounded-xl border border-zinc-300 dark:border-zinc-700 mt-3 bg-system-white dark:bg-system-black flex flex-col max-h-[80vh] overflow-hidden">
@@ -218,66 +188,49 @@ function Table({
                     {dayjs(appt.schedule).format("h:mm A")}
                   </td>
                   <td className="py-2 px-5 text-zinc-950 dark:text-zinc-50 font-medium">
-                    <div
-                      title={
-                        appt.status !== "Approved"
-                          ? "Doctor can only be assigned if status is Ongoing"
-                          : ""
-                      }
-                      className={`${
-                        appt.status !== "Approved"
-                          ? "cursor-not-allowed opacity-70"
-                          : "cursor-pointer"
-                      }`}
-                    >
-                      <Select<DoctorOptionType, false>
-                        placeholder="Select Doctor"
-                        isDisabled={appt.status !== "Approved"}
-                        options={doctors}
-                        onChange={(opt) => {
-                          if (!opt) return;
-                          handleDoctorUpdate(appt._id, opt.value);
-                        }}
-                        value={
-                          appt.doctorId
-                            ? doctors.find(
-                                (d) => d.value === appt.doctorId._id,
-                              ) || null
-                            : null
-                        }
-                        className="w-40"
-                        styles={doctorSelectStyles(darkMode)}
-                        components={{
-                          IndicatorSeparator: () => null,
-                          Option: DoctorOption,
-                          SingleValue: DoctorSingleValue,
-                        }}
-                      />
-                    </div>
+                    {Array.isArray(appt.doctorId) &&
+                    appt.doctorId.length > 0 ? (
+                      <div className="flex flex-col gap-1">
+                        {(appt.doctorId as PopulatedDoctor[]).map(
+                          (doc, idx) => (
+                            <div key={idx} className="flex items-center gap-2">
+                              <img
+                                src="/assets/images/profile-doctor.jpg"
+                                alt="profile"
+                                className="w-7 h-7 rounded-full"
+                              />
+                              <p className="w-fit whitespace-nowrap">
+                                {doc.firstname}{" "}
+                                {doc.middlename ? `${doc.middlename[0]}.` : ""}{" "}
+                                {doc.surname}
+                              </p>
+                            </div>
+                          ),
+                        )}
+                      </div>
+                    ) : (
+                      <p className="w-fit whitespace-nowrap text-zinc-400">
+                        No doctor assigned yet
+                      </p>
+                    )}
                   </td>
                   <td className="py-2 px-5 whitespace-nowrap">
-                    <div className="flex gap-2 flex-nowrap">
-                      {Array.isArray(appt.medicalDepartment) ? (
-                        appt.medicalDepartment.map((svc, idx) => (
-                          <span
-                            key={idx}
-                            className={`px-3 py-1 rounded-full text-xs font-medium ${
-                              serviceColors[svc] ||
-                              "bg-gray-50 text-gray-700 border border-gray-200"
-                            }`}
-                          >
-                            {svc}
-                          </span>
-                        ))
-                      ) : (
-                        <span
-                          className={`px-3 py-1 rounded-full text-xs font-medium ${
-                            serviceColors[appt.medicalDepartment] ||
-                            "bg-gray-50 text-gray-700 border border-gray-200"
-                          }`}
-                        >
-                          {appt.medicalDepartment}
-                        </span>
+                    <div className="flex flex-col gap-2 items-start">
+                      {normalizeMedicalDepartment(appt.medicalDepartment).map(
+                        (svc, idx) => {
+                          const serviceName = getServiceName(svc);
+                          return (
+                            <span
+                              key={idx}
+                              className={`px-3 py-1 rounded-full text-xs font-medium w-auto ${
+                                serviceColors[serviceName] ||
+                                "bg-gray-50 text-gray-700 border border-gray-200"
+                              }`}
+                            >
+                              {serviceName}
+                            </span>
+                          );
+                        },
                       )}
                     </div>
                   </td>
@@ -303,7 +256,15 @@ function Table({
                       <div className="flex items-center gap-3 text-white font-bold text-xs">
                         <button
                           onClick={() => handleAction(appt._id, "completed")}
-                          className="bg-green-500 rounded-sm px-2 py-0.5 cursor-pointer"
+                          disabled={
+                            !dayjs(appt.schedule).isSame(dayjs(), "day")
+                          }
+                          title={
+                            !dayjs(appt.schedule).isSame(dayjs(), "day")
+                              ? "Can only complete on the appointment date"
+                              : ""
+                          }
+                          className="bg-green-500 rounded-sm px-2 py-0.5 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                         >
                           Completed
                         </button>
@@ -380,37 +341,5 @@ export interface DoctorOptionType {
   label: string;
   image?: string;
 }
-
-const DoctorOption = (props: OptionProps<DoctorOptionType, false>) => {
-  return (
-    <components.Option {...props}>
-      <div className="flex items-center gap-2">
-        <img
-          src={props.data.image || "/assets/images/user-profile.jpg"}
-          alt="profile"
-          className="w-7 h-7 rounded-full"
-        />
-        <span>{props.data.label}</span>
-      </div>
-    </components.Option>
-  );
-};
-
-const DoctorSingleValue = (
-  props: SingleValueProps<DoctorOptionType, false>,
-) => {
-  return (
-    <components.SingleValue {...props}>
-      <div className="flex items-center gap-2">
-        <img
-          src={props.data.image || "/assets/images/profile-doctor.jpg"}
-          alt="profile"
-          className="w-7 h-7 rounded-full"
-        />
-        <span>{props.data.label}</span>
-      </div>
-    </components.SingleValue>
-  );
-};
 
 export default Table;

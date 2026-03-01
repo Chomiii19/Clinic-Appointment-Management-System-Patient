@@ -190,6 +190,12 @@ function TodayAppointments() {
   );
 }
 
+interface ServiceOption {
+  value: string; // _id
+  label: string; // name
+  price: number;
+}
+
 function AddService({
   handleAddAdmin,
   formState,
@@ -201,84 +207,34 @@ function AddService({
   setFormState: React.Dispatch<React.SetStateAction<DoctorFormData>>;
   setOpenAddModal: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
-  const [serviceOptions, setServiceOptions] = useState<Options[]>([]);
-  const [servicePrices, setServicePrices] = useState<{ [key: string]: number }>(
-    {},
-  );
-  const [estimatedFee, setEstimatedFee] = useState(0);
+  const [serviceOptions, setServiceOptions] = useState<ServiceOption[]>([]);
+  const [selectedServices, setSelectedServices] = useState<ServiceOption[]>([]);
 
-  // Fetch available services
+  const estimatedFee = selectedServices.reduce(
+    (sum, svc) => sum + svc.price,
+    0,
+  );
+
   useEffect(() => {
     const fetchServices = async () => {
       try {
         const res = await axios.get(`${BACKEND_DOMAIN}/api/v1/services`, {
           withCredentials: true,
         });
-        const services: Options[] = res.data.data.map(
-          (svc: { name: string }) => ({
-            value: svc.name,
+        const options: ServiceOption[] = res.data.data.map(
+          (svc: { _id: string; name: string; price: number }) => ({
+            value: svc._id,
             label: svc.name,
+            price: svc.price,
           }),
         );
-        setServiceOptions(services);
+        setServiceOptions(options);
       } catch (err) {
         console.error("Failed to fetch services", err);
       }
     };
-
     fetchServices();
   }, []);
-
-  // Fetch prices for selected services
-  useEffect(() => {
-    const fetchServicePrices = async () => {
-      if (
-        !formState.medicalDepartment ||
-        formState.medicalDepartment.length === 0
-      ) {
-        setEstimatedFee(0);
-        setServicePrices({});
-        return;
-      }
-
-      try {
-        const response = await axios.post(
-          `${BACKEND_DOMAIN}/api/v1/services/prices`,
-          { names: formState.medicalDepartment },
-          { withCredentials: true },
-        );
-
-        if (response.data.status === "success") {
-          setServicePrices(response.data.data);
-
-          // Calculate total estimated fee
-          const total = formState.medicalDepartment.reduce(
-            (sum, serviceName) => {
-              return sum + (response.data.data[serviceName] || 0);
-            },
-            0,
-          );
-
-          setEstimatedFee(total);
-
-          // Log if any services were not found
-          if (response.data.notFound && response.data.notFound.length > 0) {
-            console.warn("Services not found:", response.data.notFound);
-          }
-        }
-      } catch (error) {
-        console.error("Failed to fetch service prices", error);
-      }
-    };
-
-    fetchServicePrices();
-  }, [formState.medicalDepartment]);
-
-  const safeValue =
-    formState.medicalDepartment?.map((dep) => ({
-      value: dep,
-      label: dep,
-    })) || [];
 
   return (
     <form
@@ -314,74 +270,68 @@ function AddService({
         </div>
 
         <div className="flex flex-col gap-1 w-full">
-          <label htmlFor="name">
+          <label>
             Services <span className="text-red-500">*</span>
           </label>
-          <Select<{ value: string; label: string }, true>
+          <Select<ServiceOption, true>
             isMulti
             options={serviceOptions}
-            value={safeValue}
+            value={selectedServices}
             onChange={(selected) => {
               if (selected.length <= 3) {
+                const arr = [...selected];
+                setSelectedServices(arr);
                 setFormState((prev) => ({
                   ...prev,
-                  medicalDepartment: selected.map((s) => s.value),
+                  medicalDepartment: arr.map((s) => s.value),
                 }));
               }
             }}
           />
         </div>
 
-        {/* Estimated Fee Display */}
-        {formState.medicalDepartment.length > 0 && (
+        {selectedServices.length > 0 && (
           <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
             <div className="flex flex-col gap-2">
               <p className="text-xs font-medium text-blue-600 dark:text-blue-400">
                 Service Breakdown
               </p>
-
-              {formState.medicalDepartment.map((serviceName, idx) => (
+              {selectedServices.map((svc) => (
                 <div
-                  key={idx}
+                  key={svc.value}
                   className="flex items-center justify-between text-sm"
                 >
                   <span className="text-zinc-600 dark:text-zinc-400">
-                    {serviceName}
+                    {svc.label}
                   </span>
                   <span className="font-medium text-zinc-900 dark:text-zinc-50">
-                    ₱{(servicePrices[serviceName] || 0).toLocaleString()}
+                    ₱{svc.price.toLocaleString()}
                   </span>
                 </div>
               ))}
-
-              <div className="pt-2 mt-2 border-t border-blue-200 dark:border-blue-700">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-semibold text-blue-700 dark:text-blue-300">
-                    Estimated Total
-                  </span>
-                  <span className="text-lg font-bold text-blue-900 dark:text-blue-100">
-                    ₱{estimatedFee.toLocaleString()}
-                  </span>
-                </div>
+              <div className="pt-2 mt-2 border-t border-blue-200 dark:border-blue-700 flex items-center justify-between">
+                <span className="text-sm font-semibold text-blue-700 dark:text-blue-300">
+                  Estimated Total
+                </span>
+                <span className="text-lg font-bold text-blue-900 dark:text-blue-100">
+                  ₱{estimatedFee.toLocaleString()}
+                </span>
               </div>
             </div>
           </div>
         )}
 
         <div className="flex flex-col gap-1 w-full">
-          <label htmlFor="schedule">
+          <label>
             Schedule <span className="text-red-500">*</span>
           </label>
           <input
             required
             type="datetime-local"
-            name="schedule"
-            id="schedule"
             value={formState.schedule}
             onChange={(e) =>
               setFormState((prev) => ({ ...prev, schedule: e.target.value }))
             }
-            placeholder=""
             className="border border-zinc-300 dark:border-zinc-700 outline-none rounded-md px-2 py-0.5 w-full"
           />
         </div>
@@ -390,11 +340,8 @@ function AddService({
           <button
             onClick={() => {
               setOpenAddModal(false);
-              setFormState({
-                email: "",
-                medicalDepartment: [],
-                schedule: "",
-              });
+              setFormState({ email: "", medicalDepartment: [], schedule: "" });
+              setSelectedServices([]);
             }}
             type="button"
             className="cursor-pointer"

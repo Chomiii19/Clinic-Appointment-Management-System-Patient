@@ -250,9 +250,14 @@ function AddService({
           withCredentials: true,
         });
         const doctors: Options[] = res.data.data.map(
-          (svc: { _id: string; name: string }) => ({
+          (svc: {
+            _id: string;
+            firstname: string;
+            middlename: string;
+            surname: string;
+          }) => ({
             value: svc._id,
-            label: svc.name,
+            label: `${svc.firstname} ${svc.middlename} ${svc.surname}`,
           }),
         );
         setDoctorOptions(doctors);
@@ -386,9 +391,14 @@ function ServiceModal({
           withCredentials: true,
         });
         const doctors: Options[] = res.data.data.map(
-          (svc: { _id: string; name: string }) => ({
+          (svc: {
+            _id: string;
+            firstname: string;
+            middlename: string;
+            surname: string;
+          }) => ({
             value: svc._id,
-            label: svc.name,
+            label: `${svc.firstname} ${svc.middlename} ${svc.surname}`,
           }),
         );
         setDoctorOptions(doctors);

@@ -120,3 +120,11 @@ export interface IAppointmentLineGraphResponse {
   completed: CountEntry[];
   cancelledNoShow: CountEntry[];
 }
+
+export interface PopulatedDoctor {
+  _id: string;
+  firstname: string;
+  middlename?: string;
+  surname: string;
+  specialization?: string;
+}

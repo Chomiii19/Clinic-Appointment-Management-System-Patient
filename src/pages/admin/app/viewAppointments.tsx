@@ -40,6 +40,20 @@ interface DoctorFormData {
   medicalDepartment: string[];
 }
 
+interface DoctorOption {
+  value: string;
+  label: string;
+  specialization?: string;
+}
+
+interface DoctorResponse {
+  _id: string;
+  firstname: string;
+  middlename: string;
+  surname: string;
+  specialization?: string;
+}
+
 function ViewAppointment() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -66,6 +80,11 @@ function ViewAppointment() {
     medicalDepartment: [],
   });
 
+  const [doctorOptions, setDoctorOptions] = useState<DoctorOption[]>([]);
+  const [selectedDoctors, setSelectedDoctors] = useState<DoctorOption[]>([]);
+  const [assigningDoctors, setAssigningDoctors] = useState(false);
+  const [doctorsLoaded, setDoctorsLoaded] = useState(false);
+
   useEffect(() => {
     fetchAppointment();
   }, [id]);
@@ -75,6 +94,59 @@ function ViewAppointment() {
       fetchServicePrices();
     }
   }, [appointment?.medicalDepartment]);
+
+  useEffect(() => {
+    if (appointment?.doctorId) {
+      const current = Array.isArray(appointment.doctorId)
+        ? appointment.doctorId
+        : [appointment.doctorId];
+
+      setSelectedDoctors(
+        current.filter(Boolean).map((d) => ({
+          value: d._id,
+          label: `${d.firstname} ${d.middlename ?? ""} ${d.surname}`,
+          specialization: d.specialization,
+        })),
+      );
+    }
+  }, [appointment]);
+
+  const loadDoctors = async () => {
+    if (doctorsLoaded) return;
+    try {
+      const res = await axios.get(
+        `${BACKEND_DOMAIN}/api/v1/appointments/${id}/doctors-available`,
+        { withCredentials: true },
+      );
+      setDoctorOptions(
+        res.data.data.map((d: DoctorResponse) => ({
+          value: d._id,
+          label: `${d.firstname} ${d.middlename ?? ""} ${d.surname}`,
+          specialization: d.specialization,
+        })),
+      );
+      setDoctorsLoaded(true);
+    } catch (err) {
+      console.error("Failed to load doctors", err);
+    }
+  };
+
+  const handleAssignDoctors = async () => {
+    if (!appointment) return;
+    try {
+      setAssigningDoctors(true);
+      await axios.patch(
+        `${BACKEND_DOMAIN}/api/v1/appointments/${appointment._id}/doctor`,
+        { doctorIds: selectedDoctors.map((d) => d.value) },
+        { withCredentials: true },
+      );
+      await fetchAppointment();
+    } catch (err) {
+      console.error("Failed to assign doctors", err);
+    } finally {
+      setAssigningDoctors(false);
+    }
+  };
 
   const fetchAppointment = async () => {
     try {
@@ -508,9 +580,17 @@ function ViewAppointment() {
                   <>
                     <button
                       onClick={() => handleAction("completed")}
-                      className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors duration-150"
+                      disabled={
+                        !dayjs(appointment.schedule).isSame(dayjs(), "day")
+                      }
+                      title={
+                        !dayjs(appointment.schedule).isSame(dayjs(), "day")
+                          ? "Can only complete on the appointment date"
+                          : ""
+                      }
+                      className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors duration-150 disabled:opacity-40 disabled:cursor-not-allowed"
                     >
-                      <span className="font-medium">Completed</span>
+                      Completed
                     </button>
                     <button
                       onClick={() => handleAction("noshow")}
@@ -660,22 +740,69 @@ function ViewAppointment() {
                 </h3>
               </div>
 
-              {appointment.doctorId ? (
-                <div className="flex items-center gap-3">
-                  <img
-                    src="/assets/images/profile-doctor.jpg"
-                    alt="Doctor"
-                    className="w-12 h-12 rounded-full"
-                  />
-                  <div>
-                    <p className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-                      {`${appointment.doctorId.firstname} ${appointment.doctorId.surname}`}
-                    </p>
-                    <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                      {appointment.doctorId.specialization ||
-                        "General Practitioner"}
-                    </p>
+              {currentUser?.role === "admin" &&
+                appointment.status === "Approved" && (
+                  <div className="mb-4">
+                    <Select<DoctorOption, true>
+                      isMulti
+                      placeholder="Search and assign doctors..."
+                      options={doctorOptions}
+                      value={selectedDoctors}
+                      onMenuOpen={loadDoctors}
+                      onChange={(selected) => setSelectedDoctors([...selected])}
+                      formatOptionLabel={(opt) => (
+                        <div className="flex items-center gap-2">
+                          <img
+                            src="/assets/images/profile-doctor.jpg"
+                            className="w-6 h-6 rounded-full"
+                          />
+                          <div>
+                            <p className="text-sm font-medium">{opt.label}</p>
+                            {opt.specialization && (
+                              <p className="text-xs text-zinc-400">
+                                {opt.specialization}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    />
+                    <button
+                      onClick={handleAssignDoctors}
+                      disabled={assigningDoctors}
+                      className="mt-2 w-full flex items-center justify-center gap-2 px-4 py-2 bg-zinc-900 text-white rounded-lg hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+                    >
+                      {assigningDoctors ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                          Saving...
+                        </>
+                      ) : (
+                        "Save Assigned Doctors"
+                      )}
+                    </button>
                   </div>
+                )}
+
+              {selectedDoctors.length > 0 ? (
+                <div className="space-y-3">
+                  {selectedDoctors.map((doc) => (
+                    <div key={doc.value} className="flex items-center gap-3">
+                      <img
+                        src="/assets/images/profile-doctor.jpg"
+                        alt="Doctor"
+                        className="w-10 h-10 rounded-full"
+                      />
+                      <div>
+                        <p className="font-semibold text-zinc-900 dark:text-zinc-50">
+                          {doc.label}
+                        </p>
+                        <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                          {doc.specialization || "General Practitioner"}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               ) : (
                 <div className="text-zinc-500 dark:text-zinc-400 text-sm">
