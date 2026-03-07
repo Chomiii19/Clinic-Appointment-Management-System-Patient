@@ -1,6 +1,5 @@
 import { ChevronsUpDown, Wand } from "lucide-react";
-import { useState, type JSX } from "react";
-import { CustomCheckbox } from "../../../Checkbox";
+import { type JSX } from "react";
 import { tableHeaders } from "./headers/archiveAppointments";
 import type {
   IAppointment,
@@ -47,9 +46,6 @@ function Table({
   setRefresh: React.Dispatch<React.SetStateAction<number>>;
   loading: boolean;
 }) {
-  const [selectAll, setSelectAll] = useState(false);
-  const [selectedRows, setSelectedRows] = useState<Record<string, boolean>>({});
-
   const handleAction = async (id: string, action: string) => {
     try {
       await axios.patch(
@@ -84,15 +80,6 @@ function Table({
     }
   };
 
-  const toggleSelectAll = (checked: boolean) => {
-    setSelectAll(checked);
-    const newSelected: Record<string, boolean> = {};
-    appointments.forEach((appt) => {
-      newSelected[appt._id] = checked;
-    });
-    setSelectedRows(newSelected);
-  };
-
   const onPageChange = (page: number) => setCurrentPage(page);
 
   // Helper function to get service name from service object or string
@@ -115,15 +102,6 @@ function Table({
             <table className="table-auto border-collapse w-full">
               <thead className="text-sm text-zinc-500 sticky top-0 bg-system-white dark:bg-system-black z-10">
                 <tr>
-                  <th className="w-36 px-5 py-2 z-20 border-b border-zinc-300 dark:border-zinc-700">
-                    <div className="flex items-center gap-2 cursor-pointer w-fit">
-                      <CustomCheckbox
-                        checked={selectAll}
-                        onChange={toggleSelectAll}
-                      />
-                      REF <ChevronsUpDown className="w-3" />
-                    </div>
-                  </th>
                   {tableHeaders.map((header, i) => (
                     <TableHeader key={i} header={header} />
                   ))}
@@ -142,39 +120,8 @@ function Table({
                     .map((appt, i) => (
                       <tr
                         key={i}
-                        className={`border-b border-zinc-300 dark:border-zinc-700 transition-colors duration-150 ease-in-out ${
-                          selectedRows[appt._id]
-                            ? "bg-zinc-200/50 dark:bg-zinc-700/50"
-                            : "hover:bg-zinc-200/50 dark:hover:bg-zinc-700/50"
-                        }`}
+                        className={`border-b border-zinc-300 dark:border-zinc-700 transition-colors duration-150 ease-in-out hover:bg-zinc-200/50 dark:hover:bg-zinc-700/50`}
                       >
-                        <td className="py-2 px-5">
-                          <div className="flex items-center gap-2 cursor-pointer whitespace-nowrap">
-                            <CustomCheckbox
-                              checked={!!selectedRows[appt._id]}
-                              onChange={(checked) => {
-                                setSelectedRows((prevSelected) => {
-                                  const newSelected = {
-                                    ...prevSelected,
-                                    [appt._id]: checked,
-                                  };
-
-                                  if (!checked) setSelectAll(false);
-                                  else {
-                                    const allChecked = appointments.every(
-                                      (a) => newSelected[a._id],
-                                    );
-                                    if (allChecked) setSelectAll(true);
-                                  }
-
-                                  return newSelected;
-                                });
-                              }}
-                            />
-
-                            {appt._id.slice(0, 6)}
-                          </div>
-                        </td>
                         <td className="py-2 px-5 font-medium text-zinc-950 dark:text-zinc-50">
                           <Link
                             to={`/users/${appt.patientId._id}`}

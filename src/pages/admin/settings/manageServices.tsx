@@ -16,6 +16,7 @@ import type { FiltersState } from "../../../@types/types";
 interface ServiceFormData {
   name: string;
   status: string;
+  price: number;
 }
 
 function ManageServices() {
@@ -38,6 +39,7 @@ function ManageServices() {
   const [formState, setFormState] = useState<ServiceFormData>({
     name: "",
     status: "",
+    price: 0,
   });
 
   const [editServiceId, setEditServiceId] = useState<string | null>(null);
@@ -45,6 +47,7 @@ function ManageServices() {
   const [editFormState, setEditFormState] = useState<ServiceFormData>({
     name: "",
     status: "",
+    price: 0,
   });
 
   const tabs = ["All"];
@@ -56,11 +59,12 @@ function ManageServices() {
         {
           name: formData.name,
           status: formData.status,
+          price: formData.price,
         },
         { withCredentials: true },
       );
       setOpenEditModal(false);
-      setEditFormState({ name: "", status: "" });
+      setEditFormState({ name: "", status: "", price: 0 });
       setCurrentPage(1);
     } catch (err) {
       console.error("Service update failed:", err);
@@ -76,11 +80,12 @@ function ManageServices() {
         {
           name: formData.name,
           status: formData.status,
+          price: formData.price,
         },
         { withCredentials: true },
       );
       setOpenAddModal(false);
-      setFormState({ name: "", status: "" });
+      setFormState({ name: "", status: "", price: 0 });
       setCurrentPage(1);
       setFilters({});
       setSearch("");
@@ -193,6 +198,7 @@ function ManageServices() {
               setEditFormState({
                 name: service.name,
                 status: service.status,
+                price: service.price,
               });
               setOpenEditModal(true);
               setEditServiceId(service._id);
@@ -249,6 +255,23 @@ function AddService({
             className="border border-zinc-300 dark:border-zinc-700 outline-none rounded-md px-2 py-0.5 w-full"
           />
         </div>
+        <div className="flex flex-col gap-1 w-full">
+          <label>
+            Price <span className="text-red-500">*</span>
+          </label>
+          <input
+            required
+            type="number"
+            value={formState.price}
+            onChange={(e) =>
+              setFormState((prev) => ({
+                ...prev,
+                price: Number(e.target.value),
+              }))
+            }
+            className="border border-zinc-300 dark:border-zinc-700 outline-none rounded-md px-2 py-0.5 w-full"
+          />
+        </div>
 
         <div className="flex flex-col gap-1 w-full">
           <label htmlFor="status">
@@ -276,7 +299,7 @@ function AddService({
           <button
             onClick={() => {
               setOpenAddModal(false);
-              setFormState({ name: "", status: "" });
+              setFormState({ name: "", status: "", price: 0 });
             }}
             type="button"
             className="cursor-pointer"
@@ -332,6 +355,24 @@ function ServiceModal({
             value={formState.name}
             onChange={(e) =>
               setFormState((prev) => ({ ...prev, name: e.target.value }))
+            }
+            className="border border-zinc-300 dark:border-zinc-700 outline-none rounded-md px-2 py-0.5 w-full"
+          />
+        </div>
+
+        <div className="flex flex-col gap-1 w-full">
+          <label>
+            Price <span className="text-red-500">*</span>
+          </label>
+          <input
+            required
+            type="number"
+            value={formState.price}
+            onChange={(e) =>
+              setFormState((prev) => ({
+                ...prev,
+                price: Number(e.target.value),
+              }))
             }
             className="border border-zinc-300 dark:border-zinc-700 outline-none rounded-md px-2 py-0.5 w-full"
           />

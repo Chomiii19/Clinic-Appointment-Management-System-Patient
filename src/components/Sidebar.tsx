@@ -105,7 +105,7 @@ function Sidebar({
       {/* Sidebar */}
       <aside
         ref={sidebarRef}
-        className={`h-screen w-54 flex flex-col justify-between fixed p-2 lg:p-5 lg:pr-0 bg-off-white dark:bg-off-black transform transition-transform duration-150 ease-linear z-50 ${
+        className={`h-screen w-54 flex flex-col justify-between fixed p-2 lg:p-5 lg:pr-0 bg-off-white dark:bg-off-black transform transition-transform duration-150 ease-linear z-50 overflow-y-auto no-scrollbar ${
           openSidebar ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -227,16 +227,6 @@ function Sidebar({
                         }`}
                       >
                         Manage Services
-                      </Link>
-                      <Link
-                        to="/prices"
-                        className={`hover:text-zinc-950 dark:hover:text-zinc-50 p-2 rounded-lg transition-colors duration-150 ${
-                          page === "managePrices"
-                            ? "text-zinc-950 dark:text-zinc-50 bg-system-white dark:bg-system-black shadow-md"
-                            : ""
-                        }`}
-                      >
-                        Manage Prices
                       </Link>
                       <Link
                         to="/policies-and-terms"

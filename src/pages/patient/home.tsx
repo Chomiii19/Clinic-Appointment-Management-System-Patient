@@ -237,7 +237,7 @@ function Home() {
                 : typeof doctor.medicalDepartment === "string"
                   ? [doctor.medicalDepartment]
                   : doctor.medicalDepartment
-                    ? [doctor.medicalDepartment.name]
+                    ? [doctor.medicalDepartment._id]
                     : [];
 
               setEditFormState({
@@ -328,12 +328,14 @@ function AddService({
             options={serviceOptions}
             value={selectedServices}
             onChange={(selected) => {
-              const arr = [...selected];
-              setSelectedServices(arr);
-              setFormState((prev) => ({
-                ...prev,
-                medicalDepartment: arr.map((s) => s.value),
-              }));
+              if (selected.length <= 3) {
+                const arr = [...selected];
+                setSelectedServices(arr);
+                setFormState((prev) => ({
+                  ...prev,
+                  medicalDepartment: arr.map((s) => s.value),
+                }));
+              }
             }}
           />
         </div>
@@ -472,12 +474,15 @@ function ServiceModal({
             isMulti
             options={serviceOptions}
             value={selectedValues}
-            onChange={(selected) =>
+            onChange={(selected) => {
+              const arr = [...selected];
+              if (arr.length > 3) return;
+
               setFormState((prev) => ({
                 ...prev,
-                medicalDepartment: selected.map((s) => s.value), // _ids
-              }))
-            }
+                medicalDepartment: arr.map((s) => s.value),
+              }));
+            }}
           />
         </div>
 
