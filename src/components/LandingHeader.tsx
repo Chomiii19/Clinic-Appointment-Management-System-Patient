@@ -1,4 +1,3 @@
-import { Facebook, Twitter, Instagram } from "lucide-react";
 import { Link } from "react-router-dom";
 
 export default function Header() {
@@ -12,11 +11,9 @@ export default function Header() {
         </div>
 
         <nav className="flex gap-5 items-center">
-          <NavList text="About" />
           <NavList text="Services" />
           <NavList text="Community" />
-          <NavList text="Contact" />
-          <SocialMedia />
+
           <Profile />
         </nav>
       </div>
@@ -41,19 +38,6 @@ function NavList({ text }: { text: string }) {
     >
       {text}
     </a>
-  );
-}
-
-function SocialMedia() {
-  const style: string =
-    "text-zinc-700 w-5 h-5 cursor-pointer hover:text-primary transition-colors duration-300";
-
-  return (
-    <div className="pl-5 border-zinc-400 lg:border-l flex items-center gap-2">
-      <Facebook className={style} />
-      <Twitter className={style} />
-      <Instagram className={style} />
-    </div>
   );
 }
 

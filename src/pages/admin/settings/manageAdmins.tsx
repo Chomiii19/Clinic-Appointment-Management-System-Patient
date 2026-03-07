@@ -35,6 +35,7 @@ function ManageAdmins() {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
   const [openAddModal, setOpenAddModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -56,6 +57,8 @@ function ManageAdmins() {
 
   const handleAddAdmin = async (formData: AdminFormData) => {
     try {
+      setErrorMessage("");
+
       await axios.post(`${BACKEND_DOMAIN}/api/v1/auth/signup`, {
         firstname: formData.firstname,
         surname: formData.surname,
@@ -87,7 +90,13 @@ function ManageAdmins() {
       setFilters({});
       setSearch("");
     } catch (error) {
-      console.error("Account creation failed:", error);
+      if (axios.isAxiosError(error)) {
+        const message =
+          error.response?.data?.message || "Failed to create admin.";
+        setErrorMessage(message);
+      } else {
+        setErrorMessage("Unexpected error occurred.");
+      }
     } finally {
       setLoading(false);
     }
@@ -143,6 +152,7 @@ function ManageAdmins() {
           className="absolute h-screen w-screen z-60 flex justify-center items-center bg-black/15 dark:bg-black/25"
         >
           <AddAdmin
+            errorMessage={errorMessage}
             handleAddAdmin={handleAddAdmin}
             formState={formState}
             setFormState={setFormState}
@@ -191,9 +201,11 @@ function AddAdmin({
   formState,
   setFormState,
   setOpenAddModal,
+  errorMessage,
 }: {
   handleAddAdmin: (formData: AdminFormData) => Promise<void>;
   formState: AdminFormData;
+  errorMessage: string;
   setFormState: React.Dispatch<React.SetStateAction<AdminFormData>>;
   setOpenAddModal: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
@@ -406,6 +418,12 @@ function AddAdmin({
             Password must be at least 8 characters long, and include a mix of
             uppercase letters, numbers, and symbols.
           </p>
+
+          {errorMessage && (
+            <div className="text-sm text-red-500 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-md p-2">
+              {errorMessage}
+            </div>
+          )}
         </div>
 
         <div className="flex items-center w-full justify-end gap-3">
